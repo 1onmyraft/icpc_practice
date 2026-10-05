@@ -5,10 +5,9 @@ Language: Python by default, C++ when time limits require it.
 | Dates | Focus | Daily practice |
 |---|---|---|
 | Oct 5-11 | Contest habits, fast I/O, sets/maps/sort/bisect/heap, solve NAQ C, D, G, L, M | 3-5 problems |
-| Oct 12-18 | Graphs: BFS/DFS, DSU, Dijkstra, topological sort, unicyclic graphs. C++ refresher | 3-5 problems |
-| Oct 19-25 | Math: modular arithmetic, nCr, sieve, closed forms, counting | 3-5 problems |
-| Oct 26-Nov 1 | DP: bitmask, interval, tree. First virtual contest (weekend) | 3-5 problems + upsolve |
-| Nov 2-8 | Data structures (Fenwick, segment tree, monotonic stack), geometry (hull, calipers). Virtual contest | 3-5 problems + upsolve |
+| Oct 12-18 | Graphs (see topics_graphs.md): BFS/DFS, Dijkstra, DSU, topological sort. C++ refresher | 3-5 problems |
+| Oct 19-25 | Greedy (see topics_dp_greedy.md) plus math: modular arithmetic, nCr, sieve | 3-5 problems |
+| Oct 26-Nov 8 | DP ladder over two weeks, 1D to knapsack to sequences to bitmask to trees. First virtual contest Nov 1 | 3-5 problems + upsolve |
 | Nov 9-14 | Taper: review notebook, one short contest, flows/strings only if time | light |
 
 ## Rules
