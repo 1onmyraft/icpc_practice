@@ -11,7 +11,7 @@ C, D, G, L, M not attempted.
 | D | convex hull, rotating calipers, diameters | todo |
 | E | antidiagonal construction | solved |
 | F | bucket = (x-1)//10 in a set | solved |
-| G | second map of value counts | todo, easy |
+| G | second map of value counts, lazy init | solved (solutions/) |
 | H | interactive, random first guess, certain second | solved |
 | I | any a>b means -1, else count missing (i,i+1); use a set | fix in solutions/ |
 | J | print 's' + 'h'*(n+1) | solved |
