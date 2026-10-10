@@ -1,31 +1,682 @@
 [
- {"id":"naq26-A","source":"NAQ 2026 A","tag":"math","text":"On day i you receive 1+2+...+i gifts. Count gifts over the first n days, modulo 998244353.","constraints":"n very large (loop is too slow)","technique":"closed form","idea":"Total is n(n+1)(n+2)/6. Use Python big ints, or remove factors of 2 and 3 first in C++.","pitfalls":"Do not loop to n. Only reduce mod after dividing."},
- {"id":"naq26-B","source":"NAQ 2026 B","tag":"implementation","text":"Altitudes at consecutive integer seconds. Count triples (i, i+1, i+2) where slope of the first step exceeds slope of the second.","constraints":"time gaps always 1","technique":"simple scan","idea":"Time gaps are 1, so compare consecutive differences: a[i+1]-a[i] > a[i+2]-a[i+1].","pitfalls":"Check every triple, not every third index."},
- {"id":"naq26-C","source":"NAQ 2026 C","tag":"counting","text":"Stack n distinct rectangles with none overhanging the one below (axis-aligned, lattice points). Count the ways.","constraints":"","technique":"sort + counting","idea":"Sort by area descending. Equal-area congruent rectangles contribute k!. Count placements of each on the next larger, rotating as needed. Double if the biggest is not a square.","pitfalls":"Squares cannot rotate. Equal areas with different shapes means 0 ways."},
- {"id":"naq26-D","source":"NAQ 2026 D","tag":"geometry","text":"Convex polygon. Fewest segments to draw with no zero-area regions and total length at least k/2.","constraints":"","technique":"convex hull, rotating calipers","idea":"Longest segment is the diameter. With d diameters of length l, up to d segments give d*l; beyond that each extra gives just under l. Answer is ceil(k/2 / l), adjusting for the exact-integer case.","pitfalls":"Use integer arithmetic. A diameter that is a polygon side is invalid."},
- {"id":"naq26-E","source":"NAQ 2026 E","tag":"construction","text":"Build an n by n binary grid where every down/right path from top-left to bottom-right passes through exactly one 1.","constraints":"","technique":"construction by pattern","idea":"Valid grids are exactly one antidiagonal all 1s with everything else 0, and the antidiagonal has at least two cells.","pitfalls":"n = 1 has no valid grid under this rule."},
- {"id":"naq26-F","source":"NAQ 2026 F","tag":"implementation","text":"Given integers in 1..40 grouped in buckets of 10, count buckets with at least one given integer.","constraints":"tiny","technique":"set of bucket ids","idea":"Insert (x-1)//10 into a set and print its size.","pitfalls":""},
- {"id":"naq26-G","source":"NAQ 2026 G","tag":"data structure","text":"Maintain a map from integers to integers. Operations: set many keys to one value; ask how many keys currently have a given value.","constraints":"large n and q, many tests","technique":"second frequency map","idea":"Keep count[value] alongside the map. On each change, decrement the old value and increment the new one. Query is one lookup.","pitfalls":"Do not build an n-entry dict per test. Store only changed keys and treat missing as the default value."},
- {"id":"naq26-H","source":"NAQ 2026 H","tag":"interactive","text":"Hidden binary string of 100 pairs, each pair 01 or 10. Guess characters one at a time and learn the truth after each. Get at least 60% right.","constraints":"interactive","technique":"randomized strategy","idea":"Guess the first of each pair at random, then guess the second correctly since it is the opposite. Expected 75% correct, failure probability negligible.","pitfalls":"A deterministic strategy can be defeated by the interactor. Flush after every output."},
- {"id":"naq26-I","source":"NAQ 2026 I","tag":"graph","text":"Directed graph on 1..n. Fewest edges to add so the only topological order is 1,2,...,n, or report impossible.","constraints":"large m, many tests","technique":"observation + set lookup","idea":"Any edge j to i with i<j makes it impossible. Otherwise the answer is the number of missing edges (i, i+1).","pitfalls":"Use a set, not a list, for membership. Read all m edges before deciding."},
- {"id":"naq26-J","source":"NAQ 2026 J","tag":"implementation","text":"Given n, print s followed by n+1 copies of h.","constraints":"","technique":"string multiplication","idea":"print('s' + 'h' * (n + 1))","pitfalls":"Off by one in the count."},
- {"id":"naq26-K","source":"NAQ 2026 K","tag":"enumeration","text":"Liked numbers have every digit exactly one more than the digit to its left. For up to 1e5 queries n (up to 1e8), find the smallest liked number at least n.","constraints":"t up to 1e5, n up to 1e8","technique":"precompute + binary search","idea":"Liked numbers are substrings of 123456789, only 45 of them. Sort and bisect. The answer always exists.","pitfalls":"No leading zero, so the smallest digit is 1."},
- {"id":"naq26-L","source":"NAQ 2026 L","tag":"math","text":"Choose real p_i summing to p to minimize the sum of p_i^2 / t_i.","constraints":"floating-point output","technique":"Cauchy-Schwarz / Lagrange","idea":"Optimal p_i is proportional to t_i, giving p^2 / sum(t).","pitfalls":"Print with fixed decimals (for example :.9f)."},
- {"id":"naq26-M","source":"NAQ 2026 M","tag":"graph","text":"Connected graph with n vertices and n edges, vertex values. Count simple paths whose endpoints differ in value by k.","constraints":"","technique":"unicyclic graph decomposition","idea":"Find the single cycle, treat hanging trees. Same-tree pairs have one path, all other pairs have two. Answer = 2*(all qualifying pairs) - (qualifying pairs inside one tree).","pitfalls":"Check ordered vs unordered pairs and whether k can be 0."},
-
- {"id":"pat-01","source":"pattern","tag":"complexity","text":"n <= 20 and you must choose a subset or ordering.","constraints":"n <= 20","technique":"bitmask DP or brute force over 2^n","idea":"2^n * n is fine up to about 20.","pitfalls":"n <= 12 can allow n! permutations."},
- {"id":"pat-02","source":"pattern","tag":"complexity","text":"All-pairs shortest paths on a small graph.","constraints":"n <= 400","technique":"Floyd-Warshall","idea":"O(n^3) triple loop with the middle vertex outermost.","pitfalls":"Loop order matters."},
- {"id":"pat-03","source":"pattern","tag":"complexity","text":"Find the smallest X such that a condition holds, and the condition gets easier as X grows.","constraints":"answer range is huge","technique":"binary search on the answer","idea":"Write a feasibility check and bisect on X.","pitfalls":"Make sure the check is truly monotone."},
- {"id":"pat-04","source":"pattern","tag":"graph","text":"Shortest path in a graph with nonnegative edge weights.","constraints":"n, m up to 1e5","technique":"Dijkstra with a heap","idea":"Pop smallest distance, skip stale entries, relax neighbors.","pitfalls":"Negative edges need Bellman-Ford. Weights only 0/1 use 0-1 BFS."},
- {"id":"pat-05","source":"pattern","tag":"graph","text":"Add edges one at a time and repeatedly ask whether two vertices are connected, or merge groups.","constraints":"","technique":"DSU (union-find)","idea":"Path compression plus union by size. A union that returns False means a cycle.","pitfalls":""},
- {"id":"pat-06","source":"pattern","tag":"graph","text":"Order tasks given 'A must come before B' rules; detect impossibility.","constraints":"","technique":"topological sort","idea":"Kahn's algorithm. If not all vertices are output, there is a cycle.","pitfalls":""},
- {"id":"pat-07","source":"pattern","tag":"dp","text":"Count the ways to reach a target using items, where order may or may not matter.","constraints":"target up to 1e6","technique":"1D DP (coin change style)","idea":"dp[x] from smaller x. Loop items outside for combinations, outside the amount loop for orderings.","pitfalls":"Loop order decides combinations vs permutations."},
- {"id":"pat-08","source":"pattern","tag":"dp","text":"Longest increasing subsequence of an array.","constraints":"n up to 1e5","technique":"LIS with bisect","idea":"Maintain the smallest tail for each length, bisect to place each element. O(n log n).","pitfalls":"bisect_left for strict, bisect_right for non-decreasing."},
- {"id":"pat-09","source":"pattern","tag":"greedy","text":"Select the maximum number of non-overlapping intervals.","constraints":"","technique":"greedy by earliest end time","idea":"Sort by end, take an interval if it starts after the last taken ends.","pitfalls":"Sorting by start fails."},
- {"id":"pat-10","source":"pattern","tag":"greedy","text":"Process tasks with deadlines or merge items repeatedly choosing the cheapest.","constraints":"","technique":"heap-based greedy","idea":"Keep a priority queue and always take the best candidate.","pitfalls":"State why greedy is safe (exchange argument)."},
- {"id":"pat-11","source":"pattern","tag":"math","text":"Count something modulo 998244353 involving choose or arrangements.","constraints":"n up to 1e6","technique":"factorials + modular inverse","idea":"Precompute fact and inverse fact, nCr = fact[n]*inv[r]*inv[n-r] mod p.","pitfalls":"Use pow(x, p-2, p) for the inverse."},
- {"id":"pat-12","source":"pattern","tag":"data structure","text":"Many point updates and prefix or range sum queries.","constraints":"n, q up to 2e5","technique":"Fenwick tree or segment tree","idea":"Both give O(log n) per operation.","pitfalls":"Fenwick is 1-indexed."},
- {"id":"pat-13","source":"pattern","tag":"data structure","text":"For each element, find the next greater element to its right.","constraints":"n up to 1e6","technique":"monotonic stack","idea":"Keep a stack of decreasing values and pop while the new value is larger.","pitfalls":""},
- {"id":"pat-14","source":"pattern","tag":"geometry","text":"Smallest convex polygon containing a point set, or farthest pair of points.","constraints":"","technique":"convex hull + rotating calipers","idea":"Monotone chain hull, then calipers for the diameter.","pitfalls":"Use integer cross products. Handle collinear points."},
- {"id":"pat-15","source":"pattern","tag":"strings","text":"Find all occurrences of a pattern in a text in linear time.","constraints":"length up to 1e6","technique":"KMP or Z-function","idea":"Prefix function on pattern + separator + text.","pitfalls":""}
+ {
+  "id": "naq26-A",
+  "source": "NAQ 2026 A",
+  "tag": "math",
+  "text": "On day i you receive 1+2+...+i gifts. Count gifts over the first n days, modulo 998244353.",
+  "constraints": "n very large (loop is too slow)",
+  "technique": "closed form",
+  "idea": "Total is n(n+1)(n+2)/6. Use Python big ints, or remove factors of 2 and 3 first in C++.",
+  "pitfalls": "Do not loop to n. Only reduce mod after dividing.",
+  "learn": [
+   [
+    "Binary exponentiation / modular arithmetic",
+    "https://cp-algorithms.com/algebra/binary-exp.html"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-B",
+  "source": "NAQ 2026 B",
+  "tag": "implementation",
+  "text": "Altitudes at consecutive integer seconds. Count triples (i, i+1, i+2) where slope of the first step exceeds slope of the second.",
+  "constraints": "time gaps always 1",
+  "technique": "simple scan",
+  "idea": "Time gaps are 1, so compare consecutive differences: a[i+1]-a[i] > a[i+2]-a[i+1].",
+  "pitfalls": "Check every triple, not every third index.",
+  "learn": []
+ },
+ {
+  "id": "naq26-C",
+  "source": "NAQ 2026 C",
+  "tag": "counting",
+  "text": "Stack n distinct rectangles with none overhanging the one below (axis-aligned, lattice points). Count the ways.",
+  "constraints": "",
+  "technique": "sort + counting",
+  "idea": "Sort by area descending. Equal-area congruent rectangles contribute k!. Count placements of each on the next larger, rotating as needed. Double if the biggest is not a square.",
+  "pitfalls": "Squares cannot rotate. Equal areas with different shapes means 0 ways.",
+  "learn": [
+   [
+    "Counting basics",
+    "https://cp-algorithms.com/combinatorics/binomial-coefficients.html"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-D",
+  "source": "NAQ 2026 D",
+  "tag": "geometry",
+  "text": "Convex polygon. Fewest segments to draw with no zero-area regions and total length at least k/2.",
+  "constraints": "",
+  "technique": "convex hull, rotating calipers",
+  "idea": "Longest segment is the diameter. With d diameters of length l, up to d segments give d*l; beyond that each extra gives just under l. Answer is ceil(k/2 / l), adjusting for the exact-integer case.",
+  "pitfalls": "Use integer arithmetic. A diameter that is a polygon side is invalid.",
+  "learn": [
+   [
+    "Convex hull (then search 'rotating calipers')",
+    "https://cp-algorithms.com/geometry/convex-hull.html"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-E",
+  "source": "NAQ 2026 E",
+  "tag": "construction",
+  "text": "Build an n by n binary grid where every down/right path from top-left to bottom-right passes through exactly one 1.",
+  "constraints": "",
+  "technique": "construction by pattern",
+  "idea": "Valid grids are exactly one antidiagonal all 1s with everything else 0, and the antidiagonal has at least two cells.",
+  "pitfalls": "n = 1 has no valid grid under this rule.",
+  "learn": []
+ },
+ {
+  "id": "naq26-F",
+  "source": "NAQ 2026 F",
+  "tag": "implementation",
+  "text": "Given integers in 1..40 grouped in buckets of 10, count buckets with at least one given integer.",
+  "constraints": "tiny",
+  "technique": "set of bucket ids",
+  "idea": "Insert (x-1)//10 into a set and print its size.",
+  "pitfalls": "",
+  "learn": []
+ },
+ {
+  "id": "naq26-G",
+  "source": "NAQ 2026 G",
+  "tag": "data structure",
+  "text": "Maintain a map from integers to integers. Operations: set many keys to one value; ask how many keys currently have a given value.",
+  "constraints": "large n and q, many tests",
+  "technique": "second frequency map",
+  "idea": "Keep count[value] alongside the map. On each change, decrement the old value and increment the new one. Query is one lookup.",
+  "pitfalls": "Do not build an n-entry dict per test. Store only changed keys and treat missing as the default value.",
+  "learn": [
+   [
+    "USACO Guide: prefix sums (counting with arrays/maps)",
+    "https://usaco.guide/silver/prefix-sums"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-H",
+  "source": "NAQ 2026 H",
+  "tag": "interactive",
+  "text": "Hidden binary string of 100 pairs, each pair 01 or 10. Guess characters one at a time and learn the truth after each. Get at least 60% right.",
+  "constraints": "interactive",
+  "technique": "randomized strategy",
+  "idea": "Guess the first of each pair at random, then guess the second correctly since it is the opposite. Expected 75% correct, failure probability negligible.",
+  "pitfalls": "A deterministic strategy can be defeated by the interactor. Flush after every output.",
+  "learn": []
+ },
+ {
+  "id": "naq26-I",
+  "source": "NAQ 2026 I",
+  "tag": "graph",
+  "text": "Directed graph on 1..n. Fewest edges to add so the only topological order is 1,2,...,n, or report impossible.",
+  "constraints": "large m, many tests",
+  "technique": "observation + set lookup",
+  "idea": "Any edge j to i with i<j makes it impossible. Otherwise the answer is the number of missing edges (i, i+1).",
+  "pitfalls": "Use a set, not a list, for membership. Read all m edges before deciding.",
+  "learn": [
+   [
+    "Topological sorting",
+    "https://cp-algorithms.com/graph/topological-sort.html"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-J",
+  "source": "NAQ 2026 J",
+  "tag": "implementation",
+  "text": "Given n, print s followed by n+1 copies of h.",
+  "constraints": "",
+  "technique": "string multiplication",
+  "idea": "print('s' + 'h' * (n + 1))",
+  "pitfalls": "Off by one in the count.",
+  "learn": []
+ },
+ {
+  "id": "naq26-K",
+  "source": "NAQ 2026 K",
+  "tag": "enumeration",
+  "text": "Liked numbers have every digit exactly one more than the digit to its left. For up to 1e5 queries n (up to 1e8), find the smallest liked number at least n.",
+  "constraints": "t up to 1e5, n up to 1e8",
+  "technique": "precompute + binary search",
+  "idea": "Liked numbers are substrings of 123456789, only 45 of them. Sort and bisect. The answer always exists.",
+  "pitfalls": "No leading zero, so the smallest digit is 1.",
+  "learn": [
+   [
+    "USACO Guide: binary search",
+    "https://usaco.guide/silver/binary-search"
+   ]
+  ]
+ },
+ {
+  "id": "naq26-L",
+  "source": "NAQ 2026 L",
+  "tag": "math",
+  "text": "Choose real p_i summing to p to minimize the sum of p_i^2 / t_i.",
+  "constraints": "floating-point output",
+  "technique": "Cauchy-Schwarz / Lagrange",
+  "idea": "Optimal p_i is proportional to t_i, giving p^2 / sum(t).",
+  "pitfalls": "Print with fixed decimals (for example :.9f).",
+  "learn": []
+ },
+ {
+  "id": "naq26-M",
+  "source": "NAQ 2026 M",
+  "tag": "graph",
+  "text": "Connected graph with n vertices and n edges, vertex values. Count simple paths whose endpoints differ in value by k.",
+  "constraints": "",
+  "technique": "unicyclic graph decomposition",
+  "idea": "Find the single cycle, treat hanging trees. Same-tree pairs have one path, all other pairs have two. Answer = 2*(all qualifying pairs) - (qualifying pairs inside one tree).",
+  "pitfalls": "Check ordered vs unordered pairs and whether k can be 0.",
+  "learn": [
+   [
+    "Finding a cycle",
+    "https://cp-algorithms.com/graph/finding-cycle.html"
+   ],
+   [
+    "BFS",
+    "https://cp-algorithms.com/graph/breadth-first-search.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-01",
+  "source": "pattern",
+  "tag": "complexity",
+  "text": "n <= 20 and you must choose a subset or ordering.",
+  "constraints": "n <= 20",
+  "technique": "bitmask DP or brute force over 2^n",
+  "idea": "2^n * n is fine up to about 20.",
+  "pitfalls": "n <= 12 can allow n! permutations.",
+  "learn": [
+   [
+    "USACO Guide: bitmask DP",
+    "https://usaco.guide/gold/dp-bitmasks"
+   ]
+  ]
+ },
+ {
+  "id": "pat-02",
+  "source": "pattern",
+  "tag": "complexity",
+  "text": "All-pairs shortest paths on a small graph.",
+  "constraints": "n <= 400",
+  "technique": "Floyd-Warshall",
+  "idea": "O(n^3) triple loop with the middle vertex outermost.",
+  "pitfalls": "Loop order matters.",
+  "learn": [
+   [
+    "Floyd-Warshall",
+    "https://cp-algorithms.com/graph/all-pair-shortest-path-floyd-warshall.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-03",
+  "source": "pattern",
+  "tag": "complexity",
+  "text": "Find the smallest X such that a condition holds, and the condition gets easier as X grows.",
+  "constraints": "answer range is huge",
+  "technique": "binary search on the answer",
+  "idea": "Write a feasibility check and bisect on X.",
+  "pitfalls": "Make sure the check is truly monotone.",
+  "learn": [
+   [
+    "Binary search",
+    "https://cp-algorithms.com/num_methods/binary_search.html"
+   ],
+   [
+    "USACO Guide: binary search",
+    "https://usaco.guide/silver/binary-search"
+   ]
+  ]
+ },
+ {
+  "id": "pat-04",
+  "source": "pattern",
+  "tag": "graph",
+  "text": "Shortest path in a graph with nonnegative edge weights.",
+  "constraints": "n, m up to 1e5",
+  "technique": "Dijkstra with a heap",
+  "idea": "Pop smallest distance, skip stale entries, relax neighbors.",
+  "pitfalls": "Negative edges need Bellman-Ford. Weights only 0/1 use 0-1 BFS.",
+  "learn": [
+   [
+    "Dijkstra",
+    "https://cp-algorithms.com/graph/dijkstra.html"
+   ],
+   [
+    "USACO Guide: shortest paths",
+    "https://usaco.guide/gold/shortest-paths"
+   ],
+   [
+    "0-1 BFS",
+    "https://cp-algorithms.com/graph/01_bfs.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-05",
+  "source": "pattern",
+  "tag": "graph",
+  "text": "Add edges one at a time and repeatedly ask whether two vertices are connected, or merge groups.",
+  "constraints": "",
+  "technique": "DSU (union-find)",
+  "idea": "Path compression plus union by size. A union that returns False means a cycle.",
+  "pitfalls": "",
+  "learn": [
+   [
+    "Disjoint Set Union",
+    "https://cp-algorithms.com/data_structures/disjoint_set_union.html"
+   ],
+   [
+    "USACO Guide: DSU",
+    "https://usaco.guide/gold/dsu"
+   ]
+  ]
+ },
+ {
+  "id": "pat-06",
+  "source": "pattern",
+  "tag": "graph",
+  "text": "Order tasks given 'A must come before B' rules; detect impossibility.",
+  "constraints": "",
+  "technique": "topological sort",
+  "idea": "Kahn's algorithm. If not all vertices are output, there is a cycle.",
+  "pitfalls": "",
+  "learn": [
+   [
+    "Topological sorting",
+    "https://cp-algorithms.com/graph/topological-sort.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-07",
+  "source": "pattern",
+  "tag": "dp",
+  "text": "Count the ways to reach a target using items, where order may or may not matter.",
+  "constraints": "target up to 1e6",
+  "technique": "1D DP (coin change style)",
+  "idea": "dp[x] from smaller x. Loop items outside for combinations, outside the amount loop for orderings.",
+  "pitfalls": "Loop order decides combinations vs permutations.",
+  "learn": [
+   [
+    "Knapsack / coin DP",
+    "https://cp-algorithms.com/dynamic_programming/knapsack.html"
+   ],
+   [
+    "USACO Guide: knapsack DP",
+    "https://usaco.guide/gold/knapsack"
+   ]
+  ]
+ },
+ {
+  "id": "pat-08",
+  "source": "pattern",
+  "tag": "dp",
+  "text": "Longest increasing subsequence of an array.",
+  "constraints": "n up to 1e5",
+  "technique": "LIS with bisect",
+  "idea": "Maintain the smallest tail for each length, bisect to place each element. O(n log n).",
+  "pitfalls": "bisect_left for strict, bisect_right for non-decreasing.",
+  "learn": [
+   [
+    "Longest increasing subsequence",
+    "https://cp-algorithms.com/sequences/longest_increasing_subsequence.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-09",
+  "source": "pattern",
+  "tag": "greedy",
+  "text": "Select the maximum number of non-overlapping intervals.",
+  "constraints": "",
+  "technique": "greedy by earliest end time",
+  "idea": "Sort by end, take an interval if it starts after the last taken ends.",
+  "pitfalls": "Sorting by start fails.",
+  "learn": [
+   [
+    "USACO Guide: greedy with sorting",
+    "https://usaco.guide/silver/greedy-sorting"
+   ]
+  ]
+ },
+ {
+  "id": "pat-10",
+  "source": "pattern",
+  "tag": "greedy",
+  "text": "Process tasks with deadlines or merge items repeatedly choosing the cheapest.",
+  "constraints": "",
+  "technique": "heap-based greedy",
+  "idea": "Keep a priority queue and always take the best candidate.",
+  "pitfalls": "State why greedy is safe (exchange argument).",
+  "learn": [
+   [
+    "USACO Guide: greedy with sorting",
+    "https://usaco.guide/silver/greedy-sorting"
+   ]
+  ]
+ },
+ {
+  "id": "pat-11",
+  "source": "pattern",
+  "tag": "math",
+  "text": "Count something modulo 998244353 involving choose or arrangements.",
+  "constraints": "n up to 1e6",
+  "technique": "factorials + modular inverse",
+  "idea": "Precompute fact and inverse fact, nCr = fact[n]*inv[r]*inv[n-r] mod p.",
+  "pitfalls": "Use pow(x, p-2, p) for the inverse.",
+  "learn": [
+   [
+    "Binomial coefficients",
+    "https://cp-algorithms.com/combinatorics/binomial-coefficients.html"
+   ],
+   [
+    "Modular inverse",
+    "https://cp-algorithms.com/algebra/module-inverse.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-12",
+  "source": "pattern",
+  "tag": "data structure",
+  "text": "Many point updates and prefix or range sum queries.",
+  "constraints": "n, q up to 2e5",
+  "technique": "Fenwick tree or segment tree",
+  "idea": "Both give O(log n) per operation.",
+  "pitfalls": "Fenwick is 1-indexed.",
+  "learn": [
+   [
+    "Fenwick tree",
+    "https://cp-algorithms.com/data_structures/fenwick.html"
+   ],
+   [
+    "Segment tree",
+    "https://cp-algorithms.com/data_structures/segment_tree.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-13",
+  "source": "pattern",
+  "tag": "data structure",
+  "text": "For each element, find the next greater element to its right.",
+  "constraints": "n up to 1e6",
+  "technique": "monotonic stack",
+  "idea": "Keep a stack of decreasing values and pop while the new value is larger.",
+  "pitfalls": "",
+  "learn": [
+   [
+    "USACO Guide: stacks and monotonic stack",
+    "https://usaco.guide/gold/stacks"
+   ]
+  ]
+ },
+ {
+  "id": "pat-14",
+  "source": "pattern",
+  "tag": "geometry",
+  "text": "Smallest convex polygon containing a point set, or farthest pair of points.",
+  "constraints": "",
+  "technique": "convex hull + rotating calipers",
+  "idea": "Monotone chain hull, then calipers for the diameter.",
+  "pitfalls": "Use integer cross products. Handle collinear points.",
+  "learn": [
+   [
+    "Convex hull",
+    "https://cp-algorithms.com/geometry/convex-hull.html"
+   ]
+  ]
+ },
+ {
+  "id": "pat-15",
+  "source": "pattern",
+  "tag": "strings",
+  "text": "Find all occurrences of a pattern in a text in linear time.",
+  "constraints": "length up to 1e6",
+  "technique": "KMP or Z-function",
+  "idea": "Prefix function on pattern + separator + text.",
+  "pitfalls": "",
+  "learn": [
+   [
+    "Prefix function / KMP",
+    "https://cp-algorithms.com/string/prefix-function.html"
+   ]
+  ]
+ },
+ {
+  "id": "pnw25-A",
+  "source": "PNW 2025 D1 A: Bouquet of Balloons",
+  "tag": "greedy",
+  "text": "Solve problems one at a time (times s_i). Each solved problem gives a balloon that lifts 1 gram and loses lift linearly over d minutes. Fewest problems so that at some moment total lift is at least m, or -1.",
+  "constraints": "n, d, m up to 1e5",
+  "technique": "greedy: shortest first + prefix sums",
+  "idea": "Solve the quickest problems first. Track the total lift using running sums, scaling by d (compare with m*d) so everything stays integer.",
+  "pitfalls": "Balloons that have already expired contribute nothing. Check the judges' loop for how they handle this.",
+  "learn": [
+   [
+    "USACO Guide: greedy with sorting",
+    "https://usaco.guide/silver/greedy-sorting"
+   ],
+   [
+    "USACO Guide: prefix sums",
+    "https://usaco.guide/silver/prefix-sums"
+   ]
+  ],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/A-Bouquetofballoons-1/A-Bouquetofballoons-1.pdf"
+ },
+ {
+  "id": "pnw25-B",
+  "source": "PNW 2025 D1 B: Bus Seating",
+  "tag": "data structure",
+  "text": "n rows, k seats each. Each person picks the row maximizing C - |favorite - row|, halved once per person already sitting there. Ties go to the smaller row. Print each person's row.",
+  "constraints": "n, k, m up to 2e5, C up to 1e9",
+  "technique": "ordered set per occupancy level + nearest-row lookup",
+  "idea": "Keep a sorted set of rows for each occupancy count. Because utility halves per occupant, only about log2(C) occupancy levels can ever win. For each level, find the nearest free rows on each side of the favorite with lower_bound and compare.",
+  "pitfalls": "Full rows leave the structure. Compare ties by the smaller row.",
+  "learn": [
+   [
+    "Binary search (then look up C++ std::set lower_bound)",
+    "https://usaco.guide/silver/binary-search"
+   ]
+  ],
+  "confidence": "judges' solution read (C++ std::set)",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/B-Busseating-1/B-Busseating-1.pdf"
+ },
+ {
+  "id": "pnw25-C",
+  "source": "PNW 2025 D1 C: Closest Equal Pair",
+  "tag": "counting",
+  "text": "For every contiguous subarray, score = distance between its closest equal pair (0 if all distinct). Sum scores over all subarrays.",
+  "constraints": "n up to 4e5",
+  "technique": "count by closest pair, shortest first",
+  "idea": "Only consecutive occurrences of a color can be the closest pair. Sort those pairs by distance and assign each subarray to the shortest pair it contains, using an ordered map of untaken ranges.",
+  "pitfalls": "Answer is large: use 64-bit. Python needs a sorted structure or an offline trick.",
+  "learn": [
+   [
+    "USACO Guide: prefix sums",
+    "https://usaco.guide/silver/prefix-sums"
+   ]
+  ],
+  "confidence": "judges' solution read, medium confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/C-Closestequalpair-1/C-Closestequalpair-1.pdf"
+ },
+ {
+  "id": "pnw25-D",
+  "source": "PNW 2025 D1 D: Farthest City",
+  "tag": "graph",
+  "text": "Connected graph with n cities and n weighted roads. For every city, find the distance to the farthest city.",
+  "constraints": "n up to 3e5",
+  "technique": "unicyclic graph: cycle + tree DP",
+  "idea": "n vertices and n edges means exactly one cycle with trees hanging off it. Compute the deepest path inside each hanging tree, then handle the cycle with a sliding window and maxima (the judges use a multiset).",
+  "pitfalls": "Same graph shape as NAQ 2026 M. Distances up to 3e5*1e7 need 64-bit.",
+  "learn": [
+   [
+    "Finding a cycle",
+    "https://cp-algorithms.com/graph/finding-cycle.html"
+   ],
+   [
+    "BFS",
+    "https://cp-algorithms.com/graph/breadth-first-search.html"
+   ]
+  ],
+  "confidence": "judges' solution read, medium confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/D-Farthestcity-1/D-Farthestcity-1.pdf"
+ },
+ {
+  "id": "pnw25-E",
+  "source": "PNW 2025 D1 E: Fractal Painting",
+  "tag": "geometry",
+  "text": "A recursive painting is built from segment A=(0,0)-(x0,y0) and two children B, C that are similar copies. Can the whole infinite painting fit in a rectangle? T cases.",
+  "constraints": "T up to 1e4, coordinates up to 1e4",
+  "technique": "compare squared lengths (scaling ratios)",
+  "idea": "Each level is scaled by ratio |B|/|A| or |C|/|A|. If a ratio exceeds 1 the painting is unbounded. The judges also reject a ratio of exactly 1 when the child continues straight along the parent, and when both ratios equal 1. Use squared integer lengths, not floats.",
+  "pitfalls": "Compare squared distances exactly in integers.",
+  "learn": [],
+  "confidence": "judges' solution read, medium confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/E-Fractalpainting-1/E-Fractalpainting-1.pdf"
+ },
+ {
+  "id": "pnw25-F",
+  "source": "PNW 2025 D1 F: Friendships",
+  "tag": "data structure",
+  "text": "Queries: make two children friends; give a child a toy (max 50 each); ask for the max toys among children who are not friends with j.",
+  "constraints": "n, q up to 4e5, toys at most 50",
+  "technique": "small value range: frequency tables per vertex",
+  "idea": "Toy counts are at most 50, so keep a global count per toy value and, for each child, a count per value among their friends. A query scans values 50 down to 0 for the first value that someone non-friendly holds.",
+  "pitfalls": "Exclude the child themself. A toy add costs the child's degree, and each child gets at most 50.",
+  "learn": [],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/F-Friendships-1/F-Friendships-1.pdf"
+ },
+ {
+  "id": "pnw25-G",
+  "source": "PNW 2025 D1 G: Honkai Stress Relief",
+  "tag": "math",
+  "text": "Each of n days Audrey plays during (s,e). A watch checks at a uniform random time in (a,b). Probability she is stressed (outside play time) on at least one day.",
+  "constraints": "n <= 20, times <= 50, error 1e-6",
+  "technique": "complement + independence",
+  "idea": "Days are independent. P(relaxed every day) is the product of overlap(s,e with a,b)/(b-a). Answer is 1 minus that product.",
+  "pitfalls": "Overlap is max(0, min(b,e) - max(a,s)). Print with enough decimals.",
+  "learn": [],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/G-Honkaistressrelief-1/G-Honkaistressrelief-1.pdf"
+ },
+ {
+  "id": "pnw25-H",
+  "source": "PNW 2025 D1 H: K^th King",
+  "tag": "greedy",
+  "text": "Make the k-th largest value equal across all subarrays of length at least k, with minimum +/-1 edits, for every k from 1 to n.",
+  "constraints": "n up to 2e5",
+  "technique": "sort + incremental sums",
+  "idea": "The judges sort the array and build the answers for all k incrementally with running left and right sums around the middle. Work out why on small examples before reading the code.",
+  "pitfalls": "Answers for different k are independent (values reset).",
+  "learn": [
+   [
+    "USACO Guide: greedy with sorting",
+    "https://usaco.guide/silver/greedy-sorting"
+   ]
+  ],
+  "confidence": "judges' solution skimmed; low confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/H-Kthking-1/H-Kthking-1.pdf"
+ },
+ {
+  "id": "pnw25-I",
+  "source": "PNW 2025 D1 I: Pair Linked Mokepon",
+  "tag": "dp",
+  "text": "Two linked item-collecting games with nA and nB stations. Count item distributions letting both players reach the end, mod a prime p.",
+  "constraints": "nA, nB up to 3000",
+  "technique": "counting DP with O(nA * nB) states",
+  "idea": "The judges use a DP with about nA*nB states, building the count position by position with multiplier (ln+1). Study the sample and derive the state before reading.",
+  "pitfalls": "Modulus is a given prime, not 998244353.",
+  "learn": [
+   [
+    "DP basics",
+    "https://cp-algorithms.com/dynamic_programming/knapsack.html"
+   ]
+  ],
+  "confidence": "judges' solution skimmed; low confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/I-Pairlinkedmokepon-1/I-Pairlinkedmokepon-1.pdf"
+ },
+ {
+  "id": "pnw25-J",
+  "source": "PNW 2025 D1 J: Server Room",
+  "tag": "dp",
+  "text": "Grid with r*c <= 400 where servers can be on, off or absent; turn on the most servers with no two adjacent on. Also count the ways mod 998244353.",
+  "constraints": "r*c <= 400",
+  "technique": "broken-profile bitmask DP over the shorter side",
+  "idea": "min(r,c) is at most 20, so process cells one at a time and keep a bitmask of the last min(r,c) cells. Store a pair (max servers, ways) per mask.",
+  "pitfalls": "Pre-lit servers cannot be turned off. Merge pairs: bigger count wins, equal counts add ways.",
+  "learn": [
+   [
+    "Broken profile DP",
+    "https://cp-algorithms.com/dynamic_programming/profile-dynamics.html"
+   ],
+   [
+    "USACO Guide: bitmask DP",
+    "https://usaco.guide/gold/dp-bitmasks"
+   ]
+  ],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/J-Serverroom-1/J-Serverroom-1.pdf"
+ },
+ {
+  "id": "pnw25-K",
+  "source": "PNW 2025 D1 K: Shh",
+  "tag": "dp",
+  "text": "Change a lowercase string to contain exactly k occurrences of 'shh' with the fewest changes, and count the optimal strings mod 67.",
+  "constraints": "n <= 67",
+  "technique": "DP with (min cost, number of ways) pairs + matcher state",
+  "idea": "DP over position, number of 'shh' found so far, and how much of 'shh' is currently matched. Each state stores (min changes, ways). Combine: smaller cost wins, equal costs add the ways.",
+  "pitfalls": "Count only strings at the minimum change count.",
+  "learn": [
+   [
+    "DP basics (knapsack-style)",
+    "https://cp-algorithms.com/dynamic_programming/knapsack.html"
+   ],
+   [
+    "Prefix function (matching state)",
+    "https://cp-algorithms.com/string/prefix-function.html"
+   ]
+  ],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/K-Shh-1/K-Shh-1.pdf"
+ },
+ {
+  "id": "pnw25-L",
+  "source": "PNW 2025 D1 L: Training, Round 4",
+  "tag": "greedy",
+  "text": "Problems with (implementation, thinking) requirements must be solved in order. After each solve, one of the two skills +1. Minimum starting sum of skills.",
+  "constraints": "n <= 50, values up to 1e9",
+  "technique": "greedy simulation with banked free increments",
+  "idea": "Walk through the problems tracking current levels. Whenever a requirement exceeds a level, pay for the gap, but use any previously earned increments as free. Each solve earns one more increment to bank.",
+  "pitfalls": "Short and subtle. Check small cases by brute force.",
+  "learn": [
+   [
+    "USACO Guide: greedy",
+    "https://usaco.guide/silver/greedy-sorting"
+   ]
+  ],
+  "confidence": "judges' solution read, medium confidence",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/L-Traininground4-1/L-Traininground4-1.pdf"
+ },
+ {
+  "id": "pnw25-M",
+  "source": "PNW 2025 D1 M: Triangle of Triangles",
+  "tag": "brute force",
+  "text": "Cut a triangle from a vertex to the opposite side. Both pieces must match one of two liked angle-triples. All angles are multiples of 5.",
+  "constraints": "T up to 1e4, angles <= 170",
+  "technique": "enumerate every cut",
+  "idea": "Try each vertex and each cut angle in steps of 5 degrees. Compute both pieces' angles, sort, and compare with the two liked triples.",
+  "pitfalls": "Compare sorted angle multisets.",
+  "learn": [],
+  "confidence": "judges' solution read",
+  "url": "https://pnw.na.icpc.global/problems/2025/solutions/M-Triangleoftriangles-1/M-Triangleoftriangles-1.pdf"
+ }
 ]
