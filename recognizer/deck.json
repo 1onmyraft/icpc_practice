@@ -678,5 +678,23 @@
   "learn": [],
   "confidence": "judges' solution read",
   "url": "https://pnw.na.icpc.global/problems/2025/solutions/M-Triangleoftriangles-1/M-Triangleoftriangles-1.pdf"
+ },
+ {
+  "id": "kattis-bigand",
+  "source": "Kattis: Big And",
+  "tag": "greedy",
+  "text": "Combine N source signals with N-1 two-input AND gates arranged as a tree. Source i has delay n_i, each gate adds D, and the LED adds L. Minimize the worst-case total delay.",
+  "constraints": "N up to 4e5, values up to 1e9, 3 second limit",
+  "technique": "heap-based greedy (Huffman-style merging)",
+  "idea": "Put all n_i in a min-heap. Repeatedly pop the two smallest a and b, push max(a, b) + D. When one value is left, the answer is that value + L. Checked against exhaustive search on 3000 random small cases.",
+  "pitfalls": "A simple left-to-right chain of gates is wrong (it failed 217 of 500 random small cases). Do not re-sort the whole list each step: use a heap. Use 64-bit in C++.",
+  "learn": [
+   [
+    "Python heapq docs",
+    "https://docs.python.org/3/library/heapq.html"
+   ]
+  ],
+  "confidence": "idea verified by brute force; statement from a paraphrase of the Kattis page",
+  "url": "https://open.kattis.com/problems/bigand"
  }
 ]
