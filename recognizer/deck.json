@@ -696,5 +696,18 @@
   ],
   "confidence": "idea verified by brute force; statement from a paraphrase of the Kattis page",
   "url": "https://open.kattis.com/problems/bigand"
+ },
+ {
+  "id": "kattis-emoticons2",
+  "source": "Kattis: Emoticons (contest problem F)",
+  "tag": "brute force",
+  "text": "A platform converts any of 10 text emoticons into 1-character emojis, leftmost first. A user replaced every occurrence of one character in a message (at most 100 chars) with another. Find the minimum and maximum converted length over all possible replacements.",
+  "constraints": "text length <= 100, visible ASCII plus space",
+  "technique": "enumerate every (from, to) pair + simulate left to right",
+  "idea": "Try every distinct character in the text as 'from' and every visible ASCII character plus space as 'to' (including from == to). For each, rebuild the string and scan left to right, replacing an emoticon whenever one starts at the current position. Track the min and max length. About 1e7 steps total.",
+  "pitfalls": "Include the space and the no-change case as 'to' options. Convert by one left-to-right scan, not one emoticon type at a time. Read the full list of ten emoticons.",
+  "learn": [],
+  "confidence": "approach from the problem statement; not run against the judge",
+  "url": "https://open.kattis.com/contests/mc3wgt/problems/emoticons2"
  }
 ]
