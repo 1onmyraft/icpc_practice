@@ -1,0 +1,494 @@
+<title>Regionals Camp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: contest-scoreboard app. Header band with countdown + "who am I" balloons, tabbed panels below. */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#152033; --muted:#5a6780; --line:#d8deea; --chip:#e7ecf5;
+  --accent:#2a52d1; --accent-ink:#ffffff;
+  --ok:#1d8549; --warn:#a86b12; --bad:#c03a34;
+  --hugo:#d2443c; --tyler:#2d6be0; --edwin:#1c9555;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141f; --surface:#161e2c; --ink:#e5eaf3; --muted:#93a0b7; --line:#28324a; --chip:#1f2a3c;
+  --accent:#7e9fff; --accent-ink:#0e141f; --ok:#4cc07c; --warn:#e0a94d; --bad:#ef6a60;
+  --hugo:#f07068; --tyler:#71a0ff; --edwin:#4cc07c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141f; --surface:#161e2c; --ink:#e5eaf3; --muted:#93a0b7; --line:#28324a; --chip:#1f2a3c;
+  --accent:#7e9fff; --accent-ink:#0e141f; --ok:#4cc07c; --warn:#e0a94d; --bad:#ef6a60;
+  --hugo:#f07068; --tyler:#71a0ff; --edwin:#4cc07c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+h1,h2,h3{font-family:var(--f-display);font-stretch:85%;letter-spacing:.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,5vw,38px);font-weight:800}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+a{color:var(--accent)}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:16px}
+.count{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+.count .big{font-family:var(--f-display);font-size:44px;font-weight:800;font-stretch:75%;line-height:1}
+.who{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ball{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px 6px 8px;cursor:pointer}
+.ball[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.dot{width:16px;height:19px;border-radius:50% 50% 50% 50%/45% 45% 55% 55%;flex:none;position:relative}
+.dot::after{content:"";position:absolute;left:50%;bottom:-4px;width:1px;height:5px;background:var(--muted)}
+
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:18px 0 22px}
+nav.tabs button{border:0;background:transparent;color:var(--muted);padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+.banner{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--surface);padding:10px 14px;border-radius:6px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.topic{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.topic:first-child{border-top:0}
+.topic .probs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--chip);color:var(--muted);letter-spacing:.03em}
+.tag.core{color:var(--accent)}
+.plink{font-family:var(--f-mono);font-size:12px;background:var(--chip);color:var(--ink);text-decoration:none;padding:3px 8px;border-radius:4px}
+.plink:hover{text-decoration:underline}
+.status{align-self:start;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.status[data-s="1"]{color:var(--warn);border-color:var(--warn)}
+.status[data-s="2"]{color:var(--ok);border-color:var(--ok)}
+.status:disabled{cursor:default}
+
+ol.routine{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+form{display:flex;flex-direction:column;gap:12px}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px}
+input[type=number],input[type=text],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+textarea{min-height:64px;resize:vertical}
+::placeholder{color:var(--muted);opacity:.65}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{display:inline-flex;gap:6px;align-items:center;font-size:13px;background:var(--chip);padding:4px 10px;border-radius:999px;cursor:pointer}
+.scale{display:flex;gap:6px}
+.scale label{flex:1;text-align:center;background:var(--chip);border-radius:6px;padding:6px 0;cursor:pointer;font-family:var(--f-mono)}
+.scale input{position:absolute;opacity:0;pointer-events:none}
+.scale input:checked+span{font-weight:700;color:var(--accent)}
+.scale label:has(input:checked){outline:2px solid var(--accent)}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:10px 16px;font-weight:600;cursor:pointer;align-self:flex-start}
+.btn:disabled{opacity:.55;cursor:default}
+.msg{font-size:13px}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid currentColor;align-self:flex-start}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)}
+.strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.strip div{height:30px;border-radius:4px;background:var(--chip);display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:var(--muted);font-family:var(--f-mono);padding-bottom:2px;position:relative;overflow:hidden}
+.strip div.on{background:color-mix(in srgb,var(--c) 30%,var(--chip));color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats .v{font-family:var(--f-display);font-size:26px;font-weight:800;font-stretch:80%;line-height:1.1}
+.bar{height:8px;background:var(--chip);border-radius:4px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--c)}
+.stuck{border-left:3px solid var(--warn);padding-left:10px;font-size:14px}
+
+.week{display:flex;flex-direction:column;gap:6px}
+.planGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.events{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);position:sticky;top:0;background:var(--surface)}
+tr.cat td{font-family:var(--f-display);font-weight:700;font-size:14px;background:var(--chip)}
+.lv{font-family:var(--f-mono);font-size:11px;padding:2px 6px;border-radius:4px;display:inline-block;min-width:44px;text-align:center}
+.lv5{background:color-mix(in srgb,var(--ok) 25%,transparent)} .lv4{background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.lv3{background:color-mix(in srgb,var(--warn) 20%,transparent)} .lv2{background:color-mix(in srgb,var(--warn) 10%,transparent)}
+.lv1{color:var(--muted)}
+.owner{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+
+.log{display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:0}
+@media (prefers-reduced-motion:no-preference){.bar span{transition:width .4s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="stack" style="gap:4px">
+      <span class="label">ICPC North America Regionals · Div 1 · Sat Nov 14</span>
+      <h1>Regionals Camp</h1>
+    </div>
+    <div class="count">
+      <div><div class="big num" id="daysLeft">–</div><div class="label">days to contest</div></div>
+      <div><div class="big num" id="nextEvent">–</div><div class="label" id="nextEventLabel">next team contest</div></div>
+    </div>
+  </header>
+
+  <div class="row" style="margin-top:14px;justify-content:space-between">
+    <div class="who" id="who" aria-label="Who are you?"><span class="label">I am</span></div>
+    <span class="muted" style="font-size:13px" id="weekLabel"></span>
+  </div>
+
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <div id="banner"></div>
+  <main id="view"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- static plan data (from the team's assessment sheets) ---------- */
+const CONTEST = "2026-11-14";
+const MEMBERS = [
+  {id:"hugo",  name:"Hugo",  color:"var(--hugo)",  lane:"Graphs, trees & strings",
+   why:"Strongest graph sheet: DFS/BFS, Dijkstra and DSU already solid; head start on tries."},
+  {id:"tyler", name:"Tyler", color:"var(--tyler)", lane:"Math, data structures & geometry",
+   why:"Only one with modular arithmetic, combinatorics and basic geometry above zero."},
+  {id:"edwin", name:"Edwin", color:"var(--edwin)", lane:"DP & complete search",
+   why:"Only one with 1D/2D DP and bitmasks/backtracking at a working level."}
+];
+const CP="https://cp-algorithms.com/", UG="https://usaco.guide/";
+const T = {
+  bfs:{n:"BFS / DFS on grids and graphs",p:[[1192,"Counting Rooms"],[1193,"Labyrinth"],[1667,"Message Route"]],l:[[CP+"graph/breadth-first-search.html","BFS"],[CP+"graph/depth-first-search.html","DFS"]]},
+  comp:{n:"Components & bipartite check",p:[[1666,"Building Roads"],[1668,"Building Teams"]],l:[[CP+"graph/depth-first-search.html","DFS"]]},
+  dijkstra:{n:"Dijkstra",p:[[1671,"Shortest Routes I"],[1195,"Flight Discount"]],l:[[CP+"graph/dijkstra.html","Dijkstra"],[UG+"gold/shortest-paths","USACO: shortest paths"]]},
+  dsu:{n:"DSU (union-find)",p:[[1676,"Road Construction"]],l:[[CP+"data_structures/disjoint_set_union.html","DSU"],[UG+"gold/dsu","USACO: DSU"]]},
+  topo:{n:"Topological sort & DAG DP",p:[[1679,"Course Schedule"],[1680,"Longest Flight Route"]],l:[[CP+"graph/topological-sort.html","Topological sort"]]},
+  dp1d:{n:"1D DP",p:[[1633,"Dice Combinations"],[1634,"Minimizing Coins"],[1635,"Coin Combinations I"]],l:[[CP+"dynamic_programming/intro-to-dp.html","Intro to DP"]]},
+  bsearch:{n:"Binary search on the answer",p:[[1620,"Factory Machines"]],l:[[UG+"silver/binary-search","USACO: binary search"]]},
+  mst:{n:"MST (Kruskal)",p:[[1675,"Road Reparation"]],l:[[CP+"graph/mst_kruskal.html","Kruskal"]]},
+  apsp:{n:"Floyd-Warshall & Bellman-Ford",p:[[1672,"Shortest Routes II"],[1197,"Cycle Finding"]],l:[[CP+"graph/all-pair-shortest-path-floyd-warshall.html","Floyd-Warshall"],[CP+"graph/bellman_ford.html","Bellman-Ford"]]},
+  scc:{n:"Strongly connected components",p:[[1683,"Planets and Kingdoms"]],l:[[CP+"graph/strongly-connected-components.html","SCC"]]},
+  bridges:{n:"Bridges & articulation points",p:[[2076,"Necessary Roads"]],l:[[CP+"graph/bridge-searching.html","Bridges"]]},
+  trees:{n:"Tree basics: subtree sizes, diameter",p:[[1674,"Subordinates"],[1131,"Tree Diameter"]],l:[[CP+"graph/depth-first-search.html","DFS"]]},
+  lca:{n:"LCA (binary lifting)",p:[[1687,"Company Queries I"],[1688,"Company Queries II"]],l:[[CP+"graph/lca_binary_lifting.html","LCA"]]},
+  kmp:{n:"KMP / prefix function",p:[[1753,"String Matching"]],l:[[CP+"string/prefix-function.html","Prefix function"]]},
+  hash:{n:"Rolling hash & trie",p:[[1731,"Word Combinations"]],l:[[CP+"string/string-hashing.html","String hashing"]]},
+  knap:{n:"Knapsack & coin change",p:[[1158,"Book Shop"],[1636,"Coin Combinations II"],[1745,"Money Sums"]],l:[[CP+"dynamic_programming/knapsack.html","Knapsack"],[UG+"gold/knapsack","USACO: knapsack"]]},
+  lis:{n:"LIS & sequence DP",p:[[1145,"Increasing Subsequence"],[1639,"Edit Distance"]],l:[[CP+"sequences/longest_increasing_subsequence.html","LIS"]]},
+  grid:{n:"Grid DP",p:[[1638,"Grid Paths I"],[1746,"Array Description"]],l:[[CP+"dynamic_programming/intro-to-dp.html","Intro to DP"]]},
+  interval:{n:"Interval DP",p:[[1097,"Removal Game"],[1744,"Rectangle Cutting"]],l:[[CP+"dynamic_programming/intro-to-dp.html","Intro to DP"]]},
+  bitdp:{n:"Bitmask DP",p:[[1653,"Elevator Rides"],[1690,"Hamiltonian Flights"]],l:[[UG+"gold/dp-bitmasks","USACO: bitmask DP"]]},
+  treedp:{n:"Tree DP",p:[[1130,"Tree Matching"],[1131,"Tree Diameter"]],l:[[CP+"graph/depth-first-search.html","DFS"]]},
+  mitm:{n:"Meet in the middle",p:[[1628,"Meet in the Middle"]],l:[]},
+  greedy:{n:"Greedy + exchange argument",p:[[1629,"Movie Festival"],[1630,"Tasks and Deadlines"]],l:[[UG+"silver/greedy-sorting","USACO: greedy with sorting"]]},
+  sieve:{n:"Sieve & factorization",p:[[1713,"Counting Divisors"]],l:[[CP+"algebra/sieve-of-eratosthenes.html","Sieve"]]},
+  ncr:{n:"nCr & modular inverse",p:[[1079,"Binomial Coefficients"],[1095,"Exponentiation"]],l:[[CP+"combinatorics/binomial-coefficients.html","Binomial coefficients"],[CP+"algebra/module-inverse.html","Modular inverse"]]},
+  incl:{n:"Inclusion-exclusion",p:[[2185,"Prime Multiples"]],l:[[CP+"combinatorics/inclusion-exclusion.html","Inclusion-exclusion"]]},
+  fenwick:{n:"Fenwick tree",p:[[1646,"Static Range Sum Queries"],[1648,"Dynamic Range Sum Queries"]],l:[[CP+"data_structures/fenwick.html","Fenwick tree"]]},
+  segtree:{n:"Segment tree",p:[[1649,"Dynamic Range Minimum Queries"],[1651,"Range Update Queries"]],l:[[CP+"data_structures/segment_tree.html","Segment tree"]]},
+  sparse:{n:"Sparse table (RMQ)",p:[[1647,"Static Range Minimum Queries"]],l:[[CP+"data_structures/sparse-table.html","Sparse table"]]},
+  hull:{n:"Geometry & convex hull",p:[[2189,"Point Location Test"],[2191,"Polygon Area"],[2195,"Convex Hull"]],l:[[CP+"geometry/convex-hull.html","Convex hull"]]}
+};
+/* each week: [topicId, "core"|"lane"] */
+const PLAN = {
+  hugo:[ [["dp1d","core"],["bsearch","core"],["mst","lane"],["apsp","lane"]],
+         [["topo","lane"],["scc","lane"],["bridges","lane"]],
+         [["trees","lane"],["lca","lane"],["kmp","lane"],["hash","lane"]] ],
+  tyler:[ [["bfs","core"],["comp","core"],["dijkstra","core"],["dsu","core"],["dp1d","core"]],
+          [["greedy","lane"],["sieve","lane"],["ncr","lane"],["incl","lane"]],
+          [["fenwick","lane"],["segtree","lane"],["sparse","lane"],["hull","lane"]] ],
+  edwin:[ [["dijkstra","core"],["dsu","core"],["topo","core"],["knap","lane"]],
+          [["lis","lane"],["grid","lane"],["interval","lane"]],
+          [["bitdp","lane"],["treedp","lane"],["mitm","lane"]] ]
+};
+const WEEKS = [
+  {from:"2026-10-16",to:"2026-10-22",name:"Week 1",focus:"Common core + start your lane"},
+  {from:"2026-10-23",to:"2026-10-29",name:"Week 2",focus:"Lane depth"},
+  {from:"2026-10-30",to:"2026-11-05",name:"Week 3",focus:"Lane depth + notebook code"},
+  {from:"2026-11-06",to:"2026-11-11",name:"Week 4",focus:"Mock contests, upsolve, finish your notebook pages"},
+  {from:"2026-11-12",to:"2026-11-14",name:"Taper",focus:"Light review, quiz, sleep"}
+];
+const NOTEBOOK = {hugo:"Graphs, trees, strings, flows & matching (recognize-only)",
+  tyler:"Math, data structures, geometry, Grundy numbers (recognize-only)",
+  edwin:"DP patterns, bitmask & tree DP, meet in the middle"};
+const EVENTS = [
+  ["2026-10-17","Team contest #1: a past Div 1 regional set (not PNW 2025, Tyler has seen it). Upsolve Sunday."],
+  ["2026-10-24","Team contest #2 + upsolve."],
+  ["2026-10-31","Team contest #3 + upsolve."],
+  ["2026-11-07","Team contest #4: full 5 hours, real rules, notebook only."],
+  ["2026-11-10","Short 3-hour mock. Last new-problem practice."],
+  ["2026-11-14","Regionals."]
+];
+/* assessment levels: comfort/implementation. 5 Fully, 4 Reasonably, 3 Working on it, 2 Very basic, 1 No clue */
+const CATS = [
+ ["Core",[["Fast I/O, sorting, comparators","55 54 55","tyler/edwin"],["Maps, sets, priority queue","55 54 55","tyler/edwin"],["Prefix sums, two pointers, sliding window","55 44 55","edwin/tyler"],["Binary search on the answer","44 33 43","tyler/edwin"],["Greedy / exchange argument","22 33 43","tyler/edwin"],["Complete search / backtracking","22 42 43","edwin/hugo"],["Bitmask basics","33 11 43","edwin/tyler"]]],
+ ["Graphs",[["DFS / BFS / flood fill","33 55 54","hugo/edwin"],["Connected components / bipartite","11 44 41","hugo/edwin"],["Topological sort / DAG DP","21 34 11","hugo/edwin"],["Dijkstra","21 54 21","hugo/tyler"],["Bellman-Ford","11 22 11","hugo/edwin"],["Floyd-Warshall","11 21 21","hugo/edwin"],["DSU","21 54 21","hugo/tyler"],["MST","11 32 21","hugo/tyler"],["Bridges / articulation points","11 11 11","hugo/tyler"],["SCC","11 11 11","hugo/edwin"],["Tree algorithms / LCA","11 22 11","hugo/edwin"]]],
+ ["DP",[["1D / 2D DP","11 22 54","edwin/hugo"],["Knapsack / coin change","11 11 22","edwin/tyler"],["LIS / sequence DP","11 11 11","edwin/tyler"],["Grid DP","11 11 21","edwin/hugo"],["Interval DP","11 11 21","edwin/tyler"],["Tree DP","11 11 11","edwin/hugo"],["Bitmask DP","11 11 11","edwin/tyler"],["DP with maps / state compression","11 11 11","edwin/tyler"],["DP + graph modeling","11 11 31","edwin/hugo"]]],
+ ["Data structures",[["Fenwick tree","11 11 11","tyler/edwin"],["Segment tree","11 21 11","tyler/hugo"],["Lazy propagation","11 11 11","tyler/hugo"],["Sparse table / RMQ","11 11 11","tyler/edwin"],["Ordered set / order statistics","11 11 11","tyler/hugo"],["Offline processing","11 11 11","tyler/hugo"]]],
+ ["Math, strings, geometry",[["GCD / modular arithmetic","43 33 41","tyler/hugo"],["Sieve / factorization","11 33 11","tyler/hugo"],["nCr / modular inverse","33 23 11","tyler/hugo"],["Inclusion-exclusion","11 11 11","tyler/edwin"],["Matrix exponentiation","11 11 11","tyler/edwin"],["KMP / prefix function","11 11 11","hugo/tyler"],["Rolling hash","11 11 11","hugo/tyler"],["Trie","11 43 11","hugo/edwin"],["Basic geometry","43 11 11","tyler/edwin"],["Convex hull","11 11 11","tyler/edwin"]]],
+ ["Advanced (recognize + notebook)",[["Max flow / Dinic","11 11 11","hugo/tyler"],["Bipartite matching","11 21 11","hugo/tyler"],["Min-cut modeling","11 11 11","hugo/tyler"],["Meet in the middle","11 11 11","edwin/tyler"],["Game theory / Grundy","11 11 11","tyler/edwin"],["Heavy-light decomposition","11 11 11","hugo/tyler"],["Suffix array awareness","11 11 11","hugo/tyler"],["Constructive algorithms","11 11 11","tyler/edwin"]]]
+];
+/* level string order in CATS: Tyler, Hugo, Edwin */
+const LV_ORDER = ["tyler","hugo","edwin"];
+const LV_NAME = {5:"Full",4:"Good",3:"WIP",2:"Basic",1:"None"};
+
+/* ---------- date helpers (viewer's local calendar) ---------- */
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a,b) => Math.round((parse(b)-parse(a))/86400000);
+const today = () => iso(new Date());
+const fmt = s => parse(s).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+function weekIndex(s){ for(let i=0;i<WEEKS.length;i++) if(s>=WEEKS[i].from && s<=WEEKS[i].to) return i; return s<WEEKS[0].from?0:WEEKS.length-1; }
+
+/* ---------- tiny DOM helper (all user text goes in as text nodes) ---------- */
+function h(tag, attrs, ...kids){
+  const el = document.createElement(tag);
+  if(attrs) for(const [k,v] of Object.entries(attrs)){
+    if(v==null||v===false) continue;
+    if(k==="style" && typeof v==="object") Object.assign(el.style,v);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2),v);
+    else if(k==="text") el.textContent=v;
+    else el.setAttribute(k, v===true?"":v);
+  }
+  for(const k of kids.flat()){ if(k==null||k===false) continue; el.append(k instanceof Node?k:document.createTextNode(String(k))); }
+  return el;
+}
+const member = id => MEMBERS.find(m=>m.id===id);
+const dot = c => h("span",{class:"dot",style:{background:c}});
+
+/* ---------- state ---------- */
+const S = { me:null, tab:"today", checkins:[], progress:{}, db:null, canWrite:true, dbReady:false, dbError:"" };
+try { const m = localStorage.getItem("camp.me"); if(member(m)) S.me = m; } catch(e){}
+try { const t = localStorage.getItem("camp.tab"); if(t) S.tab = t; } catch(e){}
+if(!S.me) S.me = "tyler";
+
+const TABS = [["today","Today"],["team","Team"],["plan","Plan"],["coverage","Coverage"],["log","Log"]];
+
+function renderChrome(){
+  const t = today();
+  document.getElementById("daysLeft").textContent = Math.max(0,diffDays(t,CONTEST));
+  const next = EVENTS.find(e=>e[0]>=t && e[0]!==CONTEST);
+  document.getElementById("nextEvent").textContent = next ? (diffDays(t,next[0])===0?"Today":diffDays(t,next[0])+"d") : "–";
+  document.getElementById("nextEventLabel").textContent = next ? "team contest · "+fmt(next[0]) : "no more team contests";
+  const w = WEEKS[weekIndex(t)];
+  document.getElementById("weekLabel").textContent = w.name+" · "+fmt(w.from)+" – "+fmt(w.to)+" · "+w.focus;
+  const who = document.getElementById("who");
+  who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
+  const tabs = document.getElementById("tabs");
+  tabs.replaceChildren(...TABS.map(([id,label])=>h("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id;try{localStorage.setItem("camp.tab",id)}catch(e){} render();}},label)));
+  const b = document.getElementById("banner");
+  b.replaceChildren();
+  if(!S.db && S.dbReady) b.append(h("div",{class:"banner"},"Check-ins and progress are not available in this view. You can still read the plan. Open the page on claude.ai while signed in to check in."));
+  else if(S.db && !S.canWrite) b.append(h("div",{class:"banner"},"You can read everything here but cannot save check-ins. Ask Tyler to share this page with you as an Editor."));
+  if(S.dbError) b.append(h("div",{class:"banner"},S.dbError));
+}
+
+/* ---------- derived numbers ---------- */
+const checkinsOf = id => S.checkins.filter(c=>c.member===id);
+function streak(id){
+  const days = new Set(checkinsOf(id).map(c=>c.date));
+  let d = today(); if(!days.has(d)) d = addDays(d,-1);
+  let n=0; while(days.has(d)){ n++; d=addDays(d,-1); } return n;
+}
+function weekTotals(id){
+  const w = WEEKS[weekIndex(today())];
+  const cs = checkinsOf(id).filter(c=>c.date>=w.from && c.date<=w.to);
+  return {minutes:cs.reduce((a,c)=>a+(+c.minutes||0),0), problems:cs.reduce((a,c)=>a+(+c.solved||0),0)};
+}
+function laneTopics(id){ return PLAN[id].flat(); }
+const statusOf = (id,topic) => (S.progress[id]&&S.progress[id][topic])||0;
+
+/* ---------- views ---------- */
+function topicRow(mid, [tid,kind], editable){
+  const t = T[tid], s = statusOf(mid,tid);
+  const labels = ["Not started","Learning","Can implement"];
+  return h("div",{class:"topic"},
+    h("div",{class:"stack",style:{gap:"2px"}},
+      h("div",{class:"row",style:{gap:"8px"}}, h("strong",null,t.n), h("span",{class:"tag"+(kind==="core"?" core":"")},kind==="core"?"Common core":"Your lane")),
+      t.l.length? h("div",{class:"muted",style:{fontSize:"13px"}},"Read: ", ...t.l.map(([u,n],i)=>[i?" · ":"",h("a",{href:u,target:"_blank",rel:"noopener"},n)])) : null),
+    h("button",{class:"status","data-s":String(s),disabled:!editable||!S.db||!S.canWrite,title:editable?"Click to change":"Only "+member(mid).name+" can change this",onclick:()=>setStatus(mid,tid,(s+1)%3)},labels[s]),
+    h("div",{class:"probs"}, ...t.p.map(([id,n])=>h("a",{class:"plink",href:"https://cses.fi/problemset/task/"+id,target:"_blank",rel:"noopener"},"CSES "+id+" · "+n))));
+}
+
+function viewToday(){
+  const m = member(S.me), t = today(), wi = weekIndex(t), w = WEEKS[wi];
+  const topics = wi<3 ? PLAN[m.id][wi] : [];
+  const left = h("section",{class:"panel"},
+    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,m.name+"’s week"), h("span",{class:"label"},w.name)),
+    h("p",{class:"muted",style:{margin:0}},"Lane: "+m.lane+". "+m.why),
+    topics.length ? h("div",null,...topics.map(x=>topicRow(m.id,x,true)))
+      : h("div",{class:"stack"}, h("p",{style:{margin:0}},"No new topics this week. "+w.focus+"."),
+          h("p",{class:"muted",style:{margin:0}},"Your notebook pages: "+NOTEBOOK[m.id]+". Write them, test them, then print.")),
+    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Daily hour"),
+      h("ol",{class:"routine"},
+        h("li",null,"5 min · python3 recognizer/quiz.py quiz 5"),
+        h("li",null,"15 min · read one topic above and trace it by hand on a tiny example"),
+        h("li",null,"15 min · close the page and write the code from memory"),
+        h("li",null,"25 min · one CSES problem. Stuck at 20 min: read the editorial, then rewrite it yourself"),
+        h("li",null,"Before every submit: samples + 2 tiny inputs you made up. Max 3 wrong tries, then switch."))));
+  return h("div",{class:"grid2"}, left, checkinForm(m));
+}
+
+function checkinForm(m){
+  const t = today(), wi = weekIndex(t);
+  const existing = S.checkins.find(c=>c.member===m.id && c.date===t);
+  const topicOpts = (wi<3?PLAN[m.id][wi].map(x=>x[0]):[]).map(id=>[id,T[id].n]).concat([["contest","Team contest / upsolve"],["notebook","Notebook pages"],["other","Other"]]);
+  const chosen = new Set(existing&&existing.topics||[]);
+  const msg = h("div",{class:"msg",role:"status"});
+  const disabled = !S.db || !S.canWrite;
+  const form = h("form",{onsubmit:async e=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const doc = { member:m.id, date:t,
+        minutes: Math.max(0,Math.min(600,parseInt(fd.get("minutes"),10)||0)),
+        solved: Math.max(0,Math.min(100,parseInt(fd.get("solved"),10)||0)),
+        problems: String(fd.get("problems")||"").slice(0,400),
+        topics: fd.getAll("topics").slice(0,12),
+        stuck: String(fd.get("stuck")||"").slice(0,600),
+        confidence: parseInt(fd.get("confidence"),10)||null,
+        updatedAt: new Date().toISOString() };
+      if(!doc.minutes && !doc.solved && !doc.stuck){ msg.className="msg bad"; msg.textContent="Add your minutes, a problem count, or what you got stuck on."; return; }
+      const btn = form.querySelector("button[type=submit]"); btn.disabled = true; msg.className="msg"; msg.textContent="Saving…";
+      try { await S.db.doc("checkins/"+m.id+"_"+t).set(doc); msg.className="msg ok"; msg.textContent="Saved. Your team can see it on the Team tab."; }
+      catch(err){ handleWriteError(err,msg); }
+      finally { btn.disabled = disabled; }
+    }},
+    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,"Check in"), h("span",{class:"label"},fmt(t))),
+    h("div",{class:"row",style:{gap:"12px",flexWrap:"nowrap"}},
+      h("label",{class:"f",style:{flex:1}},"Minutes practiced", h("input",{type:"number",id:"ci-min",name:"minutes",min:"0",max:"600",step:"5",value:existing?existing.minutes:"",placeholder:"60"})),
+      h("label",{class:"f",style:{flex:1}},"Problems solved (AC)", h("input",{type:"number",id:"ci-solved",name:"solved",min:"0",max:"100",value:existing?existing.solved:"",placeholder:"2"}))),
+    h("label",{class:"f"},"Which problems", h("input",{type:"text",id:"ci-probs",name:"problems",maxlength:"400",value:existing?existing.problems:"",placeholder:"CSES 1192, Kattis bigand"})),
+    h("fieldset",{style:{border:0,padding:0,margin:0}}, h("legend",{class:"label",style:{marginBottom:"6px"}},"What you worked on"),
+      h("div",{class:"chips"}, ...topicOpts.map(([id,n])=>h("label",null,h("input",{type:"checkbox",name:"topics",value:id,checked:chosen.has(id)}),n)))),
+    h("label",{class:"f"},"Stuck on anything? (your team sees this)", h("textarea",{id:"ci-stuck",name:"stuck",maxlength:"600",placeholder:"Why does my Dijkstra TLE on Flight Discount?"},existing?existing.stuck:"")),
+    h("fieldset",{style:{border:0,padding:0,margin:0}}, h("legend",{class:"label",style:{marginBottom:"6px"}},"How confident do you feel today? (1 low, 5 high)"),
+      h("div",{class:"scale"}, ...[1,2,3,4,5].map(v=>h("label",null,h("input",{type:"radio",name:"confidence",value:String(v),checked:existing&&existing.confidence===v}),h("span",null,String(v)))))),
+    h("button",{class:"btn",type:"submit",disabled},existing?"Update today’s check-in":"Save check-in"),
+    msg);
+  return h("section",{class:"panel"},form);
+}
+
+function handleWriteError(err,msg){
+  msg.className="msg bad";
+  const code = err&&err.code;
+  if(code==="invalid_argument"){ S.canWrite=false; msg.textContent="This account cannot save here. Ask Tyler to share the page with you as an Editor."; renderChrome(); }
+  else if(code==="quota_exceeded") msg.textContent="The team's storage is full. Tell Tyler.";
+  else if(code==="resource_exhausted") msg.textContent="Too many saves at once. Wait a few seconds and try again.";
+  else msg.textContent="Could not save right now. Try again in a moment.";
+}
+
+async function setStatus(mid,tid,s){
+  if(!S.db) return;
+  const topics = Object.assign({}, S.progress[mid]||{}); topics[tid]=s;
+  S.progress[mid]=topics; render();
+  try { await S.db.doc("progress/"+mid).set({topics, updatedAt:new Date().toISOString()}); }
+  catch(err){ const m=h("div"); handleWriteError(err,m); S.dbError=m.textContent; render(); }
+}
+
+function viewTeam(){
+  const t = today();
+  const cards = MEMBERS.map(m=>{
+    const cs = checkinsOf(m.id);
+    const last = cs.map(c=>c.date).sort().pop();
+    const gap = last? diffDays(last,t) : null;
+    const pill = last===t ? h("span",{class:"pill ok"},"Checked in today")
+      : gap===1 ? h("span",{class:"pill warn"},"Not yet today")
+      : gap==null ? h("span",{class:"pill warn"},"No check-ins yet")
+      : h("span",{class:"pill bad"},"No check-in for "+gap+" days");
+    const days = [...Array(7)].map((_,i)=>addDays(t,i-6));
+    const byDay = Object.fromEntries(cs.map(c=>[c.date,c]));
+    const wt = weekTotals(m.id);
+    const lane = laneTopics(m.id), done = lane.filter(x=>statusOf(m.id,x[0])===2).length, learning = lane.filter(x=>statusOf(m.id,x[0])===1).length;
+    const latestStuck = cs.filter(c=>c.stuck).sort((a,b)=>a.date<b.date?1:-1)[0];
+    return h("article",{class:"card",style:{"--c":m.color}},
+      h("div",{class:"row",style:{justifyContent:"space-between"}}, h("div",{class:"row",style:{gap:"8px"}},dot(m.color),h("h3",null,m.name)), pill),
+      h("div",{class:"muted",style:{fontSize:"13px"}},m.lane),
+      h("div",{class:"strip","aria-label":"Last 7 days"}, ...days.map(d=>{ const c=byDay[d]; return h("div",{class:c?"on":"",title:fmt(d)+(c?": "+c.minutes+" min, "+c.solved+" solved":": no check-in")},c?String(c.minutes):parse(d).toLocaleDateString(undefined,{weekday:"narrow"})); })),
+      h("div",{class:"stats"},
+        h("div",null,h("div",{class:"v num"},String(streak(m.id))),h("div",{class:"label"},"day streak")),
+        h("div",null,h("div",{class:"v num"},String(wt.minutes)),h("div",{class:"label"},"min this week")),
+        h("div",null,h("div",{class:"v num"},String(wt.problems)),h("div",{class:"label"},"AC this week"))),
+      h("div",{class:"stack",style:{gap:"4px"}},
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Topics they can implement"),h("span",{class:"num",style:{fontSize:"13px"}},done+" / "+lane.length+(learning?" · "+learning+" learning":""))),
+        h("div",{class:"bar"},h("span",{style:{width:(lane.length?100*done/lane.length:0)+"%"}}))),
+      latestStuck? h("div",{class:"stuck"},h("div",{class:"label"},"Stuck on · "+fmt(latestStuck.date)),latestStuck.stuck) : null);
+  });
+  const t0 = today();
+  const ev = h("section",{class:"panel"}, h("h2",null,"Team contests"),
+    h("div",{class:"events"}, ...EVENTS.map(([d,txt])=>[h("span",{class:"num"+(d<t0?" muted":""),style:{fontSize:"13px"}},fmt(d)),h("span",{class:d<t0?"muted":""},txt)])));
+  return h("div",{class:"stack",style:{gap:"20px"}}, h("div",{class:"cards"},...cards), ev);
+}
+
+function viewPlan(){
+  return h("div",{class:"stack",style:{gap:"22px"}},
+    h("p",{class:"muted",style:{margin:0}},"Weeks 1–3 add topics. Week 4 is mock contests and notebook pages. Only the person whose plan it is can change their topic status."),
+    h("div",{class:"planGrid"}, ...MEMBERS.map(m=>h("section",{class:"panel",style:{borderTop:"4px solid "+m.color}},
+      h("div",{class:"row",style:{gap:"8px"}},dot(m.color),h("h2",null,m.name)),
+      h("div",{class:"muted",style:{fontSize:"13px"}},m.lane),
+      ...PLAN[m.id].map((wk,i)=>h("div",{class:"week"}, h("span",{class:"label"},WEEKS[i].name+" · "+fmt(WEEKS[i].from)+" – "+fmt(WEEKS[i].to)), h("div",null,...wk.map(x=>topicRow(m.id,x,S.me===m.id))))),
+      h("div",{class:"week"}, h("span",{class:"label"},"Week 4 · notebook pages"), h("p",{style:{margin:0}},NOTEBOOK[m.id]))))));
+}
+
+function viewCoverage(){
+  const rows=[];
+  for(const [cat,items] of CATS){
+    rows.push(h("tr",{class:"cat"},h("td",{colspan:"5"},cat)));
+    for(const [name,lv,owner] of items){
+      const parts = lv.split(" ");
+      const cells = MEMBERS.map(m=>{ const s = parts[LV_ORDER.indexOf(m.id)]; const impl = +s[1];
+        return h("td",null,h("span",{class:"lv lv"+impl,title:"Comfort "+LV_NAME[+s[0]]+", implementation "+LV_NAME[impl]},LV_NAME[impl])); });
+      const [lead,con] = owner.split("/");
+      const own = h("span",{class:"owner"},dot(member(lead).color),member(lead).name, h("span",{class:"muted",style:{fontWeight:"400"}}," · "+member(con).name));
+      rows.push(h("tr",null,h("td",null,name),...cells,h("td",null,own)));
+    }
+  }
+  return h("div",{class:"stack",style:{gap:"14px"}},
+    h("p",{class:"muted",style:{margin:0}},"Implementation level from each person's assessment sheet. The lead knows when a topic applies, can implement it, and keeps its notebook page; the contributor is the backup. Everyone still learns the common-core topics."),
+    h("div",{class:"tablewrap"},h("table",null,h("thead",null,h("tr",null,h("th",null,"Topic"),...MEMBERS.map(m=>h("th",null,m.name)),h("th",null,"Lead · contributes"))),h("tbody",null,...rows))));
+}
+
+function viewLog(){
+  const cs = S.checkins.slice().sort((a,b)=>a.date===b.date?(a.member<b.member?-1:1):(a.date<b.date?1:-1)).slice(0,60);
+  if(!cs.length) return h("section",{class:"panel"},h("h2",null,"No check-ins yet"),h("p",{class:"muted",style:{margin:0}},"Check-ins appear here as soon as anyone saves one on the Today tab."));
+  return h("section",{class:"panel"},h("h2",null,"Recent check-ins"),h("div",{class:"log"},...cs.map(c=>{ const m=member(c.member)||{name:c.member,color:"var(--muted)"};
+    return h("div",{class:"entry"}, dot(m.color), h("div",{class:"stack",style:{gap:"2px",minWidth:0}},
+      h("div",{class:"row",style:{gap:"8px"}},h("strong",null,m.name),h("span",{class:"muted num",style:{fontSize:"13px"}},fmt(c.date)+" · "+(c.minutes||0)+" min · "+(c.solved||0)+" AC"+(c.confidence?" · confidence "+c.confidence+"/5":""))),
+      c.problems? h("div",{class:"mono",style:{fontSize:"13px",overflowWrap:"anywhere"}},c.problems):null,
+      (c.topics&&c.topics.length)? h("div",{class:"chips"},...c.topics.map(id=>h("span",{class:"tag"},T[id]?T[id].n:id==="contest"?"Team contest":id==="notebook"?"Notebook":"Other"))):null,
+      c.stuck? h("div",{class:"stuck"},c.stuck):null)); })));
+}
+
+function render(){
+  renderChrome();
+  const v = document.getElementById("view");
+  const map = {today:viewToday,team:viewTeam,plan:viewPlan,coverage:viewCoverage,log:viewLog};
+  v.replaceChildren((map[S.tab]||viewToday)());
+}
+
+/* ---------- capabilities ---------- */
+render();
+(async ()=>{
+  const c = window.claude;
+  if(!c || !c.use){ S.dbReady=true; render(); return; }
+  const [db,user] = await Promise.all([c.use("db"), c.use("user")]);
+  S.db = db; S.dbReady = true;
+  if(user){ try { const w = await user.can("data.write"); if(w===false) S.canWrite=false; } catch(e){} }
+  render();
+  if(!db) return;
+  db.collection("checkins").onSnapshot(snap=>{
+    S.checkins = snap.docs.map(d=>d.data()).filter(x=>x && member(x.member) && /^\d{4}-\d{2}-\d{2}$/.test(x.date||""));
+    maybeRender();
+  }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
+  db.collection("progress").onSnapshot(snap=>{
+    const p={}; for(const d of snap.docs){ if(member(d.id)){ const x=d.data(); p[d.id]=(x&&x.topics)||{}; } }
+    S.progress=p; maybeRender();
+  }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
+})();
+/* never redraw the Today tab while someone is typing in the check-in form */
+function maybeRender(){
+  const a = document.activeElement;
+  if(S.tab==="today" && a && a.closest && a.closest("form")) { renderChrome(); return; }
+  render();
+}
+})();
+</script>
