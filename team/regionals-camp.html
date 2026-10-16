@@ -358,7 +358,7 @@ function toolsPanel(){
         cmd("python3 recognizer/quiz.py quiz 5"),
         cmd("python3 recognizer/quiz.py learn dijkstra"),
         cmd("python3 recognizer/quiz.py add"),
-        h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"study shows new cards with links, quiz tests what you've studied, add saves a problem you missed. Tags: graph, dp, greedy, math, geometry, strings, "data structure" (with quotes). Your quiz progress stays on your own computer."))),
+        h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"study shows new cards with links, quiz tests what you've studied, add saves a problem you missed. Tags: graph, dp, greedy, math, geometry, strings, \"data structure\" (with quotes). Your quiz progress stays on your own computer."))),
     h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Notebook pages in the repo"),
       h("div",{class:"chips"}, ...[["notebook/index.md","Constraint and keyword index"],["notebook/python_stdlib.md","Python standard library sheet"],["notebook/graphs.py","Graph templates"],["notebook/PLAN.md","25-page notebook plan"]].map(([f,n])=>
         h("a",{class:"plink",href:"https://github.com/1onmyraft/icpc_practice/blob/claude/icpc-regionals-prep-4y8j1o/"+f,target:"_blank",rel:"noopener"},n)))));
