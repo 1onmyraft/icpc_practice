@@ -113,6 +113,10 @@ tr.cat td{font-family:var(--f-display);font-weight:700;font-size:14px;background
 .lv1{color:var(--muted)}
 .owner{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 
+.cmd{display:flex;align-items:center;gap:10px;background:var(--chip);border-radius:6px;padding:6px 6px 6px 12px;min-width:0}
+.cmd code{font-family:var(--f-mono);font-size:13px;flex:1;min-width:0;overflow-x:auto;white-space:nowrap}
+.copy{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;flex:none}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
 .log{display:flex;flex-direction:column}
 .entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
 .entry:first-child{border-top:0}
@@ -321,12 +325,43 @@ function viewToday(){
           h("p",{class:"muted",style:{margin:0}},"Your notebook pages: "+NOTEBOOK[m.id]+". Write them, test them, then print.")),
     h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Daily hour"),
       h("ol",{class:"routine"},
-        h("li",null,"5 min · python3 recognizer/quiz.py quiz 5"),
+        h("li",null,"5 min · technique quiz (see Practice tools below)"),
         h("li",null,"15 min · read one topic above and trace it by hand on a tiny example"),
         h("li",null,"15 min · close the page and write the code from memory"),
         h("li",null,"25 min · one CSES problem. Stuck at 20 min: read the editorial, then rewrite it yourself"),
         h("li",null,"Before every submit: samples + 2 tiny inputs you made up. Max 3 wrong tries, then switch."))));
-  return h("div",{class:"grid2"}, left, checkinForm(m));
+  return h("div",{class:"stack",style:{gap:"22px"}}, h("div",{class:"grid2"}, left, checkinForm(m)), toolsPanel());
+}
+
+const REPO = "https://github.com/1onmyraft/icpc_practice/tree/claude/icpc-regionals-prep-4y8j1o";
+function cmd(text){
+  const code = h("code",null,text);
+  const btn = h("button",{class:"copy",type:"button",onclick:async ()=>{
+    try { await navigator.clipboard.writeText(text); btn.textContent="Copied"; }
+    catch(e){ const r=document.createRange(); r.selectNodeContents(code); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent="Selected, press Ctrl+C"; }
+    setTimeout(()=>{btn.textContent="Copy";},1800);
+  }},"Copy");
+  return h("div",{class:"cmd"},code,btn);
+}
+function toolsPanel(){
+  return h("section",{class:"panel"},
+    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,"Practice tools"), h("a",{href:REPO,target:"_blank",rel:"noopener"},"Open the repo on GitHub")),
+    h("p",{class:"muted",style:{margin:0}},"Python quiz for recognizing techniques, notebook pages, and solutions. Everything lives on the branch below; there is no main branch."),
+    h("div",{class:"tools"},
+      h("div",{class:"stack"}, h("span",{class:"label"},"Get it once"),
+        cmd("git clone -b claude/icpc-regionals-prep-4y8j1o https://github.com/1onmyraft/icpc_practice.git"),
+        cmd("cd icpc_practice"),
+        h("span",{class:"label"},"Get updates"),
+        cmd("git pull")),
+      h("div",{class:"stack"}, h("span",{class:"label"},"Technique quiz (Python 3, no installs)"),
+        cmd("python3 recognizer/quiz.py study 5 --tag graph"),
+        cmd("python3 recognizer/quiz.py quiz 5"),
+        cmd("python3 recognizer/quiz.py learn dijkstra"),
+        cmd("python3 recognizer/quiz.py add"),
+        h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"study shows new cards with links, quiz tests what you've studied, add saves a problem you missed. Tags: graph, dp, greedy, math, geometry, strings, "data structure" (with quotes). Your quiz progress stays on your own computer."))),
+    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Notebook pages in the repo"),
+      h("div",{class:"chips"}, ...[["notebook/index.md","Constraint and keyword index"],["notebook/python_stdlib.md","Python standard library sheet"],["notebook/graphs.py","Graph templates"],["notebook/PLAN.md","25-page notebook plan"]].map(([f,n])=>
+        h("a",{class:"plink",href:"https://github.com/1onmyraft/icpc_practice/blob/claude/icpc-regionals-prep-4y8j1o/"+f,target:"_blank",rel:"noopener"},n)))));
 }
 
 function checkinForm(m){
