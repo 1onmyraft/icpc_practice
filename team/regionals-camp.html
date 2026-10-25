@@ -298,7 +298,7 @@ function renderChrome(){
   const w = WEEKS[weekIndex(t)];
   document.getElementById("weekLabel").textContent = w.name+" · "+fmt(w.from)+" – "+fmt(w.to)+" · "+w.focus;
   const who = document.getElementById("who");
-  who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
+  who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{if(S.me!==m.id && D.mode!=="list") D.mode="setup"; S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
   const tabs = document.getElementById("tabs");
   tabs.replaceChildren(...TABS.map(([id,label])=>h("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id;try{localStorage.setItem("camp.tab",id)}catch(e){} render();}},label)));
   const b = document.getElementById("banner");
@@ -326,9 +326,20 @@ const statusOf = (id,topic) => (S.progress[id]&&S.progress[id][topic])||0;
 /* ---------- recognition drill ---------- */
 const DRILL_RAW = [["complexity", "n <= 10, try every ordering", "Brute force all permutations (n!)", "10! is about 3.6 million, fast enough.", "Procedure: constraints table"], ["complexity", "n <= 20, choose a subset or an assignment", "Bitmask DP / try all 2^n subsets", "2^20 * 20 is about 2e7.", "DP: bitmask"], ["complexity", "n <= 40, subset sum or subset choice", "Meet in the middle", "Split in two halves of 2^20 each, combine with sorting or a map.", "DP: meet in the middle"], ["complexity", "n <= 400, all pairs of something", "O(n^3): Floyd-Warshall or interval DP", "400^3 = 6.4e7.", "Graphs: Floyd-Warshall"], ["complexity", "n <= 5000", "O(n^2) DP or double loop", "5000^2 = 2.5e7.", "Procedure: constraints table"], ["complexity", "n <= 2*10^5", "O(n log n): sort, binary search, heap, Fenwick/segment tree", "n^2 would be 4e10, too slow.", "Procedure: constraints table"], ["complexity", "n <= 10^7, values up to 10^7", "O(n): one linear pass or a sieve", "Even log n is risky in Python at this size.", "Math: sieve"], ["complexity", "n up to 10^18", "O(log n): closed formula, fast power or binary search", "You cannot loop to n.", "Math: fast power"], ["complexity", "n up to 10^18, a linear recurrence, answer mod p", "Matrix exponentiation", "Raise the recurrence matrix to the n-th power in O(log n).", "Math: matrix exponentiation"], ["complexity", "Simulate the same step a huge number of times", "Fast exponentiation or cycle detection", "Repeating the same transformation is exponentiation; or the states repeat.", "Math: fast power"], ["graphs", "Shortest path in a grid, every move costs 1", "BFS", "Unweighted shortest path: the queue visits cells in order of distance.", "Graphs: BFS"], ["graphs", "Shortest path, edge weights are only 0 or 1", "0-1 BFS (deque)", "Push 0-edges to the front, 1-edges to the back.", "Graphs: 0-1 BFS"], ["graphs", "Shortest path, non-negative edge weights", "Dijkstra", "Heap of (distance, node), skip stale entries.", "Graphs: Dijkstra"], ["graphs", "Shortest path with negative edges, or detect a negative cycle", "Bellman-Ford", "Relax all edges n-1 times; a further improvement means a negative cycle.", "Graphs: Bellman-Ford"], ["graphs", "Shortest distance between every pair, n <= 400", "Floyd-Warshall", "Triple loop with the middle vertex outermost.", "Graphs: Floyd-Warshall"], ["graphs", "Merge groups and ask whether two items are in the same group", "DSU (union-find)", "Near-constant time per union and find.", "Graphs: DSU"], ["graphs", "Connect all cities with minimum total road cost", "MST (Kruskal + DSU)", "Sort edges by cost, add an edge if it joins two components.", "Graphs: MST"], ["graphs", "Tasks with prerequisites; find a valid order or detect a cycle", "Topological sort", "Kahn's algorithm with in-degrees.", "Graphs: topological sort"], ["graphs", "Longest path in a graph with no cycles", "Topological sort + DP", "Process nodes in topological order, relax forward.", "Graphs: topological sort"], ["graphs", "Count the rooms / islands / regions in a grid", "Flood fill (BFS/DFS) counting components", "Each unvisited open cell starts a new component.", "Graphs: BFS"], ["graphs", "Many queries: distance between two nodes of a tree", "LCA with binary lifting", "dist = depth[u] + depth[v] - 2*depth[lca].", "Graphs: LCA"], ["graphs", "Is the distance between two tree nodes at most 3?", "BFS parent/depth, climb a few steps", "Only a small distance matters, so no LCA structure is needed.", "Graphs: BFS"], ["graphs", "Connected graph with n vertices and n edges", "Unicyclic graph: find the single cycle", "Peel leaves (degree 1) repeatedly; what remains is the cycle.", "Graphs: cycle finding"], ["graphs", "Strongly connected parts of a directed graph", "SCC (Tarjan or Kosaraju)", "Collapse each SCC into one node to get a DAG.", "Graphs: SCC"], ["graphs", "Which roads, if removed, disconnect the graph?", "Bridges (DFS low-link)", "An edge is a bridge if low[child] > tin[parent].", "Graphs: bridges"], ["graphs", "Maximum number of edge-disjoint paths, or capacities on edges", "Max flow (Dinic)", "Flow equals the minimum cut.", "Graphs: max flow"], ["graphs", "Assign workers to jobs, each worker at most one job", "Bipartite matching", "Kuhn's algorithm or max flow.", "Graphs: matching"], ["graphs", "Each pair of booleans: 'not both' or 'at least one'", "2-SAT", "Implication graph + SCC; a variable and its negation in one SCC means impossible.", "Graphs: 2-SAT"], ["graphs", "Fewest moves to turn one small state into another", "BFS over states", "Each state is a node, each move an edge.", "Graphs: BFS"], ["dp", "Number of ways to reach a total, answer mod 1e9+7", "Counting DP", "ways[x] built from smaller x.", "DP: 1D"], ["dp", "Pick items with weights, capacity up to 1e5, maximize value", "0/1 knapsack DP", "dp[w] = best value with weight w; loop weights downwards.", "DP: knapsack"], ["dp", "Longest increasing subsequence, n up to 2e5", "LIS with binary search (O(n log n))", "Keep the smallest tail for each length; bisect each element in.", "DP: LIS"], ["dp", "Minimum edits to turn string A into string B", "2D DP (edit distance)", "dp[i][j] from the three neighbours.", "DP: 2D"], ["dp", "Best way to merge or split a sequence; answer depends on the split point", "Interval DP", "dp[l][r] = best over split points k.", "DP: interval"], ["dp", "Count paths moving right/down in a grid with blocked cells", "Grid DP", "paths[i][j] = paths from above + paths from the left.", "DP: grid"], ["dp", "Tree: an answer for every subtree (max independent set, sizes)", "Tree DP (DFS)", "Combine children's answers at the parent.", "DP: tree"], ["dp", "Count numbers in [L, R] whose digits satisfy a rule", "Digit DP", "State: position, tight flag, plus what the rule needs.", "DP: digit"], ["dp", "Expected value or probability over random steps", "DP over states (or linearity of expectation)", "Write E[state] in terms of next states.", "DP: probability"], ["dp", "Order n <= 17 people to maximize a probability", "Bitmask DP over the set already used", "dp[mask] = best result with exactly these people placed.", "DP: bitmask"], ["greedy", "Minimize the maximum, or maximize the minimum", "Binary search on the answer", "Write a feasibility check for a guess and bisect.", "Procedure: binary search on answer"], ["greedy", "Smallest X such that a monotone condition holds", "Binary search on the answer", "If X works, every larger X works too.", "Procedure: binary search on answer"], ["greedy", "Maximum number of non-overlapping intervals", "Greedy by earliest end time", "Sort by end; take an interval if it starts after the last one ends.", "Procedure: greedy"], ["greedy", "Repeatedly combine the two smallest items", "Heap (Huffman-style greedy)", "Pop two, push the combination.", "Data structures: heap"], ["greedy", "Repeatedly take the current smallest or largest", "Heap / priority queue", "O(log n) per push and pop.", "Data structures: heap"], ["greedy", "Largest number <= n with a digit property, n has 1e5 digits", "Greedy on the digits", "Find the first position that breaks the rule and fix it locally.", "Procedure: greedy"], ["greedy", "Try every way, but the input is tiny (n <= 8 puzzle)", "Backtracking with pruning", "Stop a branch as soon as a constraint fails.", "Procedure: complete search"], ["data structures", "Many queries: sum of a[l..r], array never changes", "Prefix sums", "sum = pre[r+1] - pre[l].", "Data structures: prefix sums"], ["data structures", "Point updates and range sum queries", "Fenwick tree (BIT)", "O(log n) for both.", "Data structures: Fenwick"], ["data structures", "Range updates and range queries", "Segment tree with lazy propagation", "Store pending updates at nodes.", "Data structures: segment tree"], ["data structures", "Range minimum queries, array never changes", "Sparse table", "O(1) per query after O(n log n) build.", "Data structures: sparse table"], ["data structures", "For each element, the next greater element", "Monotonic stack", "Pop while the new value is larger.", "Data structures: monotonic stack"], ["data structures", "Maximum of every window of size k", "Monotonic deque", "Keep indices with decreasing values; drop the front when it leaves.", "Data structures: monotonic stack"], ["data structures", "Count pairs with a sum or difference of k", "Hash map of counts", "cnt[v] * cnt[v+k]; c*(c-1)/2 when k = 0.", "Python stdlib: Counter"], ["data structures", "XOR of a subarray", "Prefix XOR", "xor(l..r) = px[r+1] ^ px[l].", "Data structures: prefix sums"], ["data structures", "Nearest value above or below x in a changing set", "Ordered set (C++ std::set) / bisect", "lower_bound gives the neighbours.", "Data structures: ordered set"], ["strings", "Find all occurrences of a pattern in a text", "KMP / Z-function", "Linear time.", "Strings: KMP"], ["strings", "Compare many substrings quickly", "Rolling hash", "Prefix hashes give any substring's hash in O(1).", "Strings: hashing"], ["strings", "Dictionary of words, prefix queries", "Trie", "One node per prefix.", "Strings: trie"], ["strings", "Is q a subsequence of s, for many queries", "Next-occurrence positions + binary search", "For each letter keep its positions; bisect for the next one.", "Strings: subsequence"], ["math", "Choose k of n, answer mod a prime", "Factorials + modular inverse", "C(n,k) = n! * inv(k!) * inv((n-k)!) mod p.", "Math: nCr"], ["math", "Division modulo a prime p", "Modular inverse: pow(x, p-2, p)", "Fermat's little theorem.", "Math: modular inverse"], ["math", "All primes up to 10^7", "Sieve of Eratosthenes", "Mark multiples of each prime.", "Math: sieve"], ["math", "Factorize one number up to 10^12", "Trial division up to sqrt(n)", "sqrt(10^12) = 10^6 steps.", "Math: factorization"], ["math", "Count things satisfying at least one of several conditions", "Inclusion-exclusion", "Add singles, subtract pairs, add triples...", "Math: inclusion-exclusion"], ["math", "Reflections or rotations in a circle", "Complex numbers as rotations", "Rotating means multiplying by a unit complex number.", "Math: complex numbers"], ["math", "Two players play optimally; who wins?", "Game theory: winning/losing positions or Grundy numbers", "A position is winning if some move leads to a losing one.", "Math: Grundy"], ["math", "Sum of something over all subarrays or pairs", "Contribution technique", "Count how many times each element contributes.", "Math: counting"], ["geometry", "Area of a polygon from its vertices", "Shoelace formula", "Half the sum of cross products of consecutive vertices.", "Geometry: area"], ["geometry", "Is a point left of a line? Do two segments cross?", "Cross product", "The sign of the cross product gives orientation.", "Geometry: cross product"], ["geometry", "Smallest convex polygon around points, or farthest pair", "Convex hull (+ rotating calipers)", "Monotone chain in O(n log n).", "Geometry: convex hull"], ["geometry", "Split a convex polygon's area from one vertex", "Fan triangulation + prefix areas", "Triangles (0, i, i+1); find where half is reached.", "Geometry: area"], ["procedure", "Interactive problem", "Flush after every print", "print(x, flush=True); read the judge's reply before continuing.", "Procedure: interactive"], ["procedure", "Python, input with 10^6 numbers", "Read everything with sys.stdin.buffer.read().split()", "input() per line is too slow.", "Python stdlib: input"], ["procedure", "Three wrong answers on the same problem", "Stop: re-read, brute force on small cases, or switch problems", "Guessing fixes wastes penalty time.", "Procedure: checklist"]];
 function hid(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
-const DRILL = DRILL_RAW.map(c=>({id:hid(c[1]),tag:c[0],clue:c[1],answer:c[2],why:c[3],where:c[4]}));
+const CORE_ANSWERS = new Set(["BFS","Dijkstra","DSU (union-find)","Flood fill (BFS/DFS) counting components","Counting DP",
+  "Binary search on the answer","Prefix sums","Hash map of counts"]);
+function cardOwner(tag, ans){
+  if(tag==="complexity"||tag==="procedure"||CORE_ANSWERS.has(ans)) return "core";
+  if(tag==="graphs"||tag==="strings") return "hugo";
+  if(tag==="dp"||ans.startsWith("Backtracking")) return "edwin";
+  return "tyler";                       // greedy, data structures, math, geometry
+}
+const DRILL = DRILL_RAW.map(c=>({id:hid(c[1]),tag:c[0],clue:c[1],answer:c[2],why:c[3],where:c[4],owner:cardOwner(c[0],c[2])}));
+const isMine = (c,id) => c.owner==="core" || c.owner===id;
+function ownerLabel(c){ if(c.owner==="core") return "Common core: everyone implements it";
+  const m=member(c.owner); return (c.owner===S.me?"Your lane":m.name+"’s lane")+" ("+m.lane.toLowerCase()+")"+(c.owner===S.me?"":": recognize it, hand it to "+m.name+" or use their notebook page"); }
 const DTAGS = [...new Set(DRILL.map(c=>c.tag))];
-const D = { mode:"setup", tag:"all", len:20, queue:[], card:null, opts:[], chosen:null, right:0, asked:0, missed:[], search:"" };
+const D = { mode:"setup", tag:"mine", len:20, queue:[], card:null, opts:[], chosen:null, right:0, asked:0, missed:[], search:"" };
 S.drillStats = {};             // member -> {cardId: {s: seen, m: misses}}
 const SAVE = { timer:null, inflight:false, dirty:false, pending:false };
 function myStats(){ return (S.drillStats[S.me] = S.drillStats[S.me] || {}); }
@@ -344,10 +355,16 @@ function drillOptions(card){
 }
 function startDrill(onlyMissed){
   const st = myStats();
-  let pool = onlyMissed ? D.missed.slice() : DRILL.filter(c=>D.tag==="all"||c.tag===D.tag);
-  pool = pool.map(c=>[c, -(st[c.id]?.m||0), (st[c.id]?.s||0), Math.random()])
+  const weakest = list => list.map(c=>[c, -(st[c.id]?.m||0), (st[c.id]?.s||0), Math.random()])
              .sort((a,b)=>a[1]-b[1]||a[2]-b[2]||a[3]-b[3]).map(x=>x[0]);
-  D.queue = shuffle(pool.slice(0, onlyMissed ? pool.length : D.len));
+  if(onlyMissed) D.queue = shuffle(D.missed.slice());
+  else if(D.tag==="mine"){
+    const mine = weakest(DRILL.filter(c=>isMine(c,S.me))), other = weakest(DRILL.filter(c=>!isMine(c,S.me)));
+    const nMine = Math.min(mine.length, Math.round(D.len*0.7));
+    const pick = mine.slice(0,nMine).concat(other.slice(0, D.len-nMine));
+    if(pick.length < D.len) pick.push(...mine.slice(nMine, nMine + D.len - pick.length));
+    D.queue = shuffle(pick);
+  } else D.queue = shuffle(weakest(DRILL.filter(c=>D.tag==="all"||c.tag===D.tag)).slice(0, D.len));
   D.right=0; D.asked=0; D.missed=[]; D.mode="card"; nextCard();
 }
 function nextCard(){
@@ -379,9 +396,11 @@ async function flushSave(who){
 }
 function drillSummary(id){
   const st=S.drillStats[id]||{};
-  let mastered=0, weak=0;
-  for(const c of DRILL){ const e=st[c.id]; if(e&&e.s>0&&e.m===0) mastered++; if(e&&e.m>0) weak++; }
-  return {mastered, weak};
+  let mastered=0, weak=0, laneMastered=0, laneTotal=0;
+  for(const c of DRILL){ const e=st[c.id]; const ok=e&&e.s>0&&e.m===0;
+    if(ok) mastered++; if(e&&e.m>0) weak++;
+    if(isMine(c,id)){ laneTotal++; if(ok) laneMastered++; } }
+  return {mastered, weak, laneMastered, laneTotal};
 }
 document.addEventListener("keydown", e=>{
   if(S.tab!=="drill" || e.target.closest && e.target.closest("input,textarea")) return;
@@ -392,14 +411,15 @@ function viewDrill(){
   const m = member(S.me), sum = drillSummary(S.me);
   const head = h("div",{class:"row",style:{justifyContent:"space-between"}},
     h("h2",null,"Recognition drill"),
-    h("span",{class:"muted num",style:{fontSize:"13px"}},m.name+": "+sum.mastered+" of "+DRILL.length+" mastered"+(sum.weak?" · "+sum.weak+" to review":"")));
+    h("span",{class:"muted num",style:{fontSize:"13px"}},m.name+": "+sum.laneMastered+" of "+sum.laneTotal+" lane + core · "+sum.mastered+" of "+DRILL.length+" overall"+(sum.weak?" · "+sum.weak+" to review":"")));
   if(D.mode==="card") return h("section",{class:"panel dcard"}, head, drillCard());
   if(D.mode==="done") return h("section",{class:"panel dcard"}, head, drillDone());
   if(D.mode==="list") return h("section",{class:"panel dcard"}, head, drillList());
-  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All topics":t));
+  const tagBtns = ["mine","all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="mine"?"For "+m.name:t==="all"?"All topics":t));
   const lenBtns = [10,20,40].map(n=>h("button",{type:"button","aria-pressed":String(D.len===n),onclick:()=>{D.len=n;render();}},n+" cards"));
   return h("section",{class:"panel dsetup"}, head,
     h("p",{class:"muted",style:{margin:0}},"Read a clue, pick the technique. A wrong answer shows why and which notebook section has the code, and the card comes back a few cards later. Your weakest cards come first."),
+    h("p",{style:{margin:0}},h("strong",null,"For "+m.name+": "),"about 70% "+m.lane.toLowerCase()+" plus the common core (the ones you implement), 30% other lanes (recognize and hand off)."),
     h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Topic"),h("div",{class:"seg"},...tagBtns)),
     h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Length"),h("div",{class:"seg"},...lenBtns)),
     h("div",{class:"row"}, h("button",{class:"btn",type:"button",onclick:()=>startDrill(false)},"Start drill"),
@@ -420,7 +440,7 @@ function drillCard(){
     answered ? h("div",{class:"feedback"+(ok?"":" bad")},
         h("strong",null, ok?"Correct.":"Answer: "+c.answer),
         h("span",null,c.why),
-        h("span",{class:"muted",style:{fontSize:"13px"}},"Notebook: "+c.where)) : null,
+        h("span",{class:"muted",style:{fontSize:"13px"}},"Notebook: "+c.where+" · "+ownerLabel(c))) : null,
     answered ? h("div",{class:"row"}, h("button",{class:"btn",type:"button",onclick:nextCard},D.queue.length?"Next card":"See results"),
         h("button",{class:"status",type:"button",style:{padding:"9px 14px"},onclick:()=>{D.mode="setup";render();}},"Stop")) : null);
 }
@@ -438,14 +458,14 @@ function drillList(){
   const listBox = h("div");
   const fill = ()=>{
     const q=D.search.toLowerCase();
-    const rows=DRILL.filter(c=>(D.tag==="all"||c.tag===D.tag) && (!q || (c.clue+" "+c.answer+" "+c.tag).toLowerCase().includes(q)));
+    const rows=DRILL.filter(c=>(D.tag==="all"||(D.tag==="mine"?isMine(c,S.me):c.tag===D.tag)) && (!q || (c.clue+" "+c.answer+" "+c.tag).toLowerCase().includes(q)));
     listBox.replaceChildren(...(rows.length? rows.map(c=>h("div",{class:"studyrow"},
       h("span",null,h("span",{class:"tag",style:{marginRight:"8px"}},c.tag),c.clue),
       h("span",{class:"a"},"→ "+c.answer),
-      h("span",{class:"muted",style:{fontSize:"13px"}},c.why+" Notebook: "+c.where))) : [h("p",{class:"muted"},"No cards match.")]));
+      h("span",{class:"muted",style:{fontSize:"13px"}},c.why+" Notebook: "+c.where+" · "+ownerLabel(c)))) : [h("p",{class:"muted"},"No cards match.")]));
   };
   fill();
-  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All":t));
+  const tagBtns = ["mine","all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="mine"?"Mine (lane + core)":t==="all"?"All":t));
   return h("div",{class:"dcard"},
     h("div",{class:"seg"},...tagBtns),
     h("input",{type:"search",id:"drill-search",placeholder:"Search clues and techniques",value:D.search,oninput:e=>{D.search=e.target.value;fill();}}),
@@ -601,8 +621,8 @@ function viewTeam(){
         h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Topics they can implement"),h("span",{class:"num",style:{fontSize:"13px"}},done+" / "+lane.length+(learning?" · "+learning+" learning":""))),
         h("div",{class:"bar"},h("span",{style:{width:(lane.length?100*done/lane.length:0)+"%"}}))),
       (()=>{ const ds=drillSummary(m.id); return h("div",{class:"stack",style:{gap:"4px"}},
-        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill cards mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.mastered+" / "+DRILL.length+(ds.weak?" · "+ds.weak+" to review":""))),
-        h("div",{class:"bar"},h("span",{style:{width:(100*ds.mastered/DRILL.length)+"%"}}))); })(),
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill: lane + core mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.laneMastered+" / "+ds.laneTotal+" · "+ds.mastered+"/"+DRILL.length+" overall")),
+        h("div",{class:"bar"},h("span",{style:{width:(100*ds.laneMastered/ds.laneTotal)+"%"}}))); })(),
       latestStuck? h("div",{class:"stuck"},h("div",{class:"label"},"Stuck on · "+fmt(latestStuck.date)),latestStuck.stuck) : null);
   });
   const t0 = today();
