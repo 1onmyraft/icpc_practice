@@ -117,6 +117,27 @@ tr.cat td{font-family:var(--f-display);font-weight:700;font-size:14px;background
 .cmd code{font-family:var(--f-mono);font-size:13px;flex:1;min-width:0;overflow-x:auto;white-space:nowrap}
 .copy{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;flex:none}
 .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
+.dsetup{display:flex;flex-direction:column;gap:14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dcard{display:flex;flex-direction:column;gap:16px}
+.clue{font-family:var(--f-display);font-stretch:85%;font-size:clamp(22px,3.6vw,30px);font-weight:700;line-height:1.2;text-wrap:balance}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:12px 14px;cursor:pointer;font:inherit;min-width:0}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .k{font-family:var(--f-mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 6px;flex:none;margin-top:2px}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+.opt:disabled{cursor:default}
+.feedback{border-left:4px solid var(--ok);padding:8px 12px;background:var(--bg);border-radius:4px;display:flex;flex-direction:column;gap:4px}
+.feedback.bad{border-left-color:var(--bad)}
+.dprog{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.studyrow{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:10px 0;border-top:1px solid var(--line)}
+.studyrow:first-child{border-top:0}
+.studyrow .a{font-weight:600}
+input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
 .log{display:flex;flex-direction:column}
 .entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
 .entry:first-child{border-top:0}
@@ -266,7 +287,7 @@ try { const m = localStorage.getItem("camp.me"); if(member(m)) S.me = m; } catch
 try { const t = localStorage.getItem("camp.tab"); if(t) S.tab = t; } catch(e){}
 if(!S.me) S.me = "tyler";
 
-const TABS = [["today","Today"],["team","Team"],["plan","Plan"],["coverage","Coverage"],["log","Log"]];
+const TABS = [["today","Today"],["drill","Drill"],["team","Team"],["plan","Plan"],["coverage","Coverage"],["log","Log"]];
 
 function renderChrome(){
   const t = today();
@@ -302,6 +323,136 @@ function weekTotals(id){
 function laneTopics(id){ return PLAN[id].flat(); }
 const statusOf = (id,topic) => (S.progress[id]&&S.progress[id][topic])||0;
 
+/* ---------- recognition drill ---------- */
+const DRILL_RAW = [["complexity", "n <= 10, try every ordering", "Brute force all permutations (n!)", "10! is about 3.6 million, fast enough.", "Procedure: constraints table"], ["complexity", "n <= 20, choose a subset or an assignment", "Bitmask DP / try all 2^n subsets", "2^20 * 20 is about 2e7.", "DP: bitmask"], ["complexity", "n <= 40, subset sum or subset choice", "Meet in the middle", "Split in two halves of 2^20 each, combine with sorting or a map.", "DP: meet in the middle"], ["complexity", "n <= 400, all pairs of something", "O(n^3): Floyd-Warshall or interval DP", "400^3 = 6.4e7.", "Graphs: Floyd-Warshall"], ["complexity", "n <= 5000", "O(n^2) DP or double loop", "5000^2 = 2.5e7.", "Procedure: constraints table"], ["complexity", "n <= 2*10^5", "O(n log n): sort, binary search, heap, Fenwick/segment tree", "n^2 would be 4e10, too slow.", "Procedure: constraints table"], ["complexity", "n <= 10^7, values up to 10^7", "O(n): one linear pass or a sieve", "Even log n is risky in Python at this size.", "Math: sieve"], ["complexity", "n up to 10^18", "O(log n): closed formula, fast power or binary search", "You cannot loop to n.", "Math: fast power"], ["complexity", "n up to 10^18, a linear recurrence, answer mod p", "Matrix exponentiation", "Raise the recurrence matrix to the n-th power in O(log n).", "Math: matrix exponentiation"], ["complexity", "Simulate the same step a huge number of times", "Fast exponentiation or cycle detection", "Repeating the same transformation is exponentiation; or the states repeat.", "Math: fast power"], ["graphs", "Shortest path in a grid, every move costs 1", "BFS", "Unweighted shortest path: the queue visits cells in order of distance.", "Graphs: BFS"], ["graphs", "Shortest path, edge weights are only 0 or 1", "0-1 BFS (deque)", "Push 0-edges to the front, 1-edges to the back.", "Graphs: 0-1 BFS"], ["graphs", "Shortest path, non-negative edge weights", "Dijkstra", "Heap of (distance, node), skip stale entries.", "Graphs: Dijkstra"], ["graphs", "Shortest path with negative edges, or detect a negative cycle", "Bellman-Ford", "Relax all edges n-1 times; a further improvement means a negative cycle.", "Graphs: Bellman-Ford"], ["graphs", "Shortest distance between every pair, n <= 400", "Floyd-Warshall", "Triple loop with the middle vertex outermost.", "Graphs: Floyd-Warshall"], ["graphs", "Merge groups and ask whether two items are in the same group", "DSU (union-find)", "Near-constant time per union and find.", "Graphs: DSU"], ["graphs", "Connect all cities with minimum total road cost", "MST (Kruskal + DSU)", "Sort edges by cost, add an edge if it joins two components.", "Graphs: MST"], ["graphs", "Tasks with prerequisites; find a valid order or detect a cycle", "Topological sort", "Kahn's algorithm with in-degrees.", "Graphs: topological sort"], ["graphs", "Longest path in a graph with no cycles", "Topological sort + DP", "Process nodes in topological order, relax forward.", "Graphs: topological sort"], ["graphs", "Count the rooms / islands / regions in a grid", "Flood fill (BFS/DFS) counting components", "Each unvisited open cell starts a new component.", "Graphs: BFS"], ["graphs", "Many queries: distance between two nodes of a tree", "LCA with binary lifting", "dist = depth[u] + depth[v] - 2*depth[lca].", "Graphs: LCA"], ["graphs", "Is the distance between two tree nodes at most 3?", "BFS parent/depth, climb a few steps", "Only a small distance matters, so no LCA structure is needed.", "Graphs: BFS"], ["graphs", "Connected graph with n vertices and n edges", "Unicyclic graph: find the single cycle", "Peel leaves (degree 1) repeatedly; what remains is the cycle.", "Graphs: cycle finding"], ["graphs", "Strongly connected parts of a directed graph", "SCC (Tarjan or Kosaraju)", "Collapse each SCC into one node to get a DAG.", "Graphs: SCC"], ["graphs", "Which roads, if removed, disconnect the graph?", "Bridges (DFS low-link)", "An edge is a bridge if low[child] > tin[parent].", "Graphs: bridges"], ["graphs", "Maximum number of edge-disjoint paths, or capacities on edges", "Max flow (Dinic)", "Flow equals the minimum cut.", "Graphs: max flow"], ["graphs", "Assign workers to jobs, each worker at most one job", "Bipartite matching", "Kuhn's algorithm or max flow.", "Graphs: matching"], ["graphs", "Each pair of booleans: 'not both' or 'at least one'", "2-SAT", "Implication graph + SCC; a variable and its negation in one SCC means impossible.", "Graphs: 2-SAT"], ["graphs", "Fewest moves to turn one small state into another", "BFS over states", "Each state is a node, each move an edge.", "Graphs: BFS"], ["dp", "Number of ways to reach a total, answer mod 1e9+7", "Counting DP", "ways[x] built from smaller x.", "DP: 1D"], ["dp", "Pick items with weights, capacity up to 1e5, maximize value", "0/1 knapsack DP", "dp[w] = best value with weight w; loop weights downwards.", "DP: knapsack"], ["dp", "Longest increasing subsequence, n up to 2e5", "LIS with binary search (O(n log n))", "Keep the smallest tail for each length; bisect each element in.", "DP: LIS"], ["dp", "Minimum edits to turn string A into string B", "2D DP (edit distance)", "dp[i][j] from the three neighbours.", "DP: 2D"], ["dp", "Best way to merge or split a sequence; answer depends on the split point", "Interval DP", "dp[l][r] = best over split points k.", "DP: interval"], ["dp", "Count paths moving right/down in a grid with blocked cells", "Grid DP", "paths[i][j] = paths from above + paths from the left.", "DP: grid"], ["dp", "Tree: an answer for every subtree (max independent set, sizes)", "Tree DP (DFS)", "Combine children's answers at the parent.", "DP: tree"], ["dp", "Count numbers in [L, R] whose digits satisfy a rule", "Digit DP", "State: position, tight flag, plus what the rule needs.", "DP: digit"], ["dp", "Expected value or probability over random steps", "DP over states (or linearity of expectation)", "Write E[state] in terms of next states.", "DP: probability"], ["dp", "Order n <= 17 people to maximize a probability", "Bitmask DP over the set already used", "dp[mask] = best result with exactly these people placed.", "DP: bitmask"], ["greedy", "Minimize the maximum, or maximize the minimum", "Binary search on the answer", "Write a feasibility check for a guess and bisect.", "Procedure: binary search on answer"], ["greedy", "Smallest X such that a monotone condition holds", "Binary search on the answer", "If X works, every larger X works too.", "Procedure: binary search on answer"], ["greedy", "Maximum number of non-overlapping intervals", "Greedy by earliest end time", "Sort by end; take an interval if it starts after the last one ends.", "Procedure: greedy"], ["greedy", "Repeatedly combine the two smallest items", "Heap (Huffman-style greedy)", "Pop two, push the combination.", "Data structures: heap"], ["greedy", "Repeatedly take the current smallest or largest", "Heap / priority queue", "O(log n) per push and pop.", "Data structures: heap"], ["greedy", "Largest number <= n with a digit property, n has 1e5 digits", "Greedy on the digits", "Find the first position that breaks the rule and fix it locally.", "Procedure: greedy"], ["greedy", "Try every way, but the input is tiny (n <= 8 puzzle)", "Backtracking with pruning", "Stop a branch as soon as a constraint fails.", "Procedure: complete search"], ["data structures", "Many queries: sum of a[l..r], array never changes", "Prefix sums", "sum = pre[r+1] - pre[l].", "Data structures: prefix sums"], ["data structures", "Point updates and range sum queries", "Fenwick tree (BIT)", "O(log n) for both.", "Data structures: Fenwick"], ["data structures", "Range updates and range queries", "Segment tree with lazy propagation", "Store pending updates at nodes.", "Data structures: segment tree"], ["data structures", "Range minimum queries, array never changes", "Sparse table", "O(1) per query after O(n log n) build.", "Data structures: sparse table"], ["data structures", "For each element, the next greater element", "Monotonic stack", "Pop while the new value is larger.", "Data structures: monotonic stack"], ["data structures", "Maximum of every window of size k", "Monotonic deque", "Keep indices with decreasing values; drop the front when it leaves.", "Data structures: monotonic stack"], ["data structures", "Count pairs with a sum or difference of k", "Hash map of counts", "cnt[v] * cnt[v+k]; c*(c-1)/2 when k = 0.", "Python stdlib: Counter"], ["data structures", "XOR of a subarray", "Prefix XOR", "xor(l..r) = px[r+1] ^ px[l].", "Data structures: prefix sums"], ["data structures", "Nearest value above or below x in a changing set", "Ordered set (C++ std::set) / bisect", "lower_bound gives the neighbours.", "Data structures: ordered set"], ["strings", "Find all occurrences of a pattern in a text", "KMP / Z-function", "Linear time.", "Strings: KMP"], ["strings", "Compare many substrings quickly", "Rolling hash", "Prefix hashes give any substring's hash in O(1).", "Strings: hashing"], ["strings", "Dictionary of words, prefix queries", "Trie", "One node per prefix.", "Strings: trie"], ["strings", "Is q a subsequence of s, for many queries", "Next-occurrence positions + binary search", "For each letter keep its positions; bisect for the next one.", "Strings: subsequence"], ["math", "Choose k of n, answer mod a prime", "Factorials + modular inverse", "C(n,k) = n! * inv(k!) * inv((n-k)!) mod p.", "Math: nCr"], ["math", "Division modulo a prime p", "Modular inverse: pow(x, p-2, p)", "Fermat's little theorem.", "Math: modular inverse"], ["math", "All primes up to 10^7", "Sieve of Eratosthenes", "Mark multiples of each prime.", "Math: sieve"], ["math", "Factorize one number up to 10^12", "Trial division up to sqrt(n)", "sqrt(10^12) = 10^6 steps.", "Math: factorization"], ["math", "Count things satisfying at least one of several conditions", "Inclusion-exclusion", "Add singles, subtract pairs, add triples...", "Math: inclusion-exclusion"], ["math", "Reflections or rotations in a circle", "Complex numbers as rotations", "Rotating means multiplying by a unit complex number.", "Math: complex numbers"], ["math", "Two players play optimally; who wins?", "Game theory: winning/losing positions or Grundy numbers", "A position is winning if some move leads to a losing one.", "Math: Grundy"], ["math", "Sum of something over all subarrays or pairs", "Contribution technique", "Count how many times each element contributes.", "Math: counting"], ["geometry", "Area of a polygon from its vertices", "Shoelace formula", "Half the sum of cross products of consecutive vertices.", "Geometry: area"], ["geometry", "Is a point left of a line? Do two segments cross?", "Cross product", "The sign of the cross product gives orientation.", "Geometry: cross product"], ["geometry", "Smallest convex polygon around points, or farthest pair", "Convex hull (+ rotating calipers)", "Monotone chain in O(n log n).", "Geometry: convex hull"], ["geometry", "Split a convex polygon's area from one vertex", "Fan triangulation + prefix areas", "Triangles (0, i, i+1); find where half is reached.", "Geometry: area"], ["procedure", "Interactive problem", "Flush after every print", "print(x, flush=True); read the judge's reply before continuing.", "Procedure: interactive"], ["procedure", "Python, input with 10^6 numbers", "Read everything with sys.stdin.buffer.read().split()", "input() per line is too slow.", "Python stdlib: input"], ["procedure", "Three wrong answers on the same problem", "Stop: re-read, brute force on small cases, or switch problems", "Guessing fixes wastes penalty time.", "Procedure: checklist"]];
+function hid(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
+const DRILL = DRILL_RAW.map(c=>({id:hid(c[1]),tag:c[0],clue:c[1],answer:c[2],why:c[3],where:c[4]}));
+const DTAGS = [...new Set(DRILL.map(c=>c.tag))];
+const D = { mode:"setup", tag:"all", len:20, queue:[], card:null, opts:[], chosen:null, right:0, asked:0, missed:[], search:"" };
+S.drillStats = {};             // member -> {cardId: {s: seen, m: misses}}
+const SAVE = { timer:null, inflight:false, dirty:false, pending:false };
+function myStats(){ return (S.drillStats[S.me] = S.drillStats[S.me] || {}); }
+try { for(const m of MEMBERS){ const x = localStorage.getItem("camp.drill."+m.id); if(x) S.drillStats[m.id]=JSON.parse(x); } } catch(e){}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function drillOptions(card){
+  const others=[...new Set(DRILL.filter(c=>c.answer!==card.answer).map(c=>c.answer))];
+  const same=[...new Set(DRILL.filter(c=>c.tag===card.tag && c.answer!==card.answer).map(c=>c.answer))];
+  const picks=shuffle(same.slice()).slice(0,2);
+  const rest=shuffle(others.filter(o=>!picks.includes(o)));
+  while(picks.length<3) picks.push(rest.pop());
+  return shuffle(picks.concat([card.answer]));
+}
+function startDrill(onlyMissed){
+  const st = myStats();
+  let pool = onlyMissed ? D.missed.slice() : DRILL.filter(c=>D.tag==="all"||c.tag===D.tag);
+  pool = pool.map(c=>[c, -(st[c.id]?.m||0), (st[c.id]?.s||0), Math.random()])
+             .sort((a,b)=>a[1]-b[1]||a[2]-b[2]||a[3]-b[3]).map(x=>x[0]);
+  D.queue = shuffle(pool.slice(0, onlyMissed ? pool.length : D.len));
+  D.right=0; D.asked=0; D.missed=[]; D.mode="card"; nextCard();
+}
+function nextCard(){
+  if(!D.queue.length){ D.mode="done"; D.card=null; render(); return; }
+  D.card=D.queue.shift(); D.opts=drillOptions(D.card); D.chosen=null; render();
+}
+function answer(i){
+  if(D.mode!=="card"||D.chosen!==null) return;
+  D.chosen=i; const ok = D.opts[i]===D.card.answer;
+  const st=myStats(), e=(st[D.card.id]=st[D.card.id]||{s:0,m:0});
+  e.s++; D.asked++;
+  if(ok){ D.right++; e.m=Math.max(0,e.m-1); }
+  else { e.m++; if(!D.missed.includes(D.card)) D.missed.push(D.card); D.queue.splice(Math.min(3,D.queue.length),0,D.card); }
+  scheduleSave(); render();
+}
+function scheduleSave(){
+  const who=S.me, data=JSON.parse(JSON.stringify(myStats()));
+  try { localStorage.setItem("camp.drill."+who, JSON.stringify(data)); } catch(e){}
+  if(!S.db || !S.canWrite) return;
+  SAVE.pending=true; clearTimeout(SAVE.timer);
+  SAVE.timer=setTimeout(()=>flushSave(who),1200);
+}
+async function flushSave(who){
+  if(SAVE.inflight){ SAVE.dirty=true; return; }
+  SAVE.inflight=true;
+  try { await S.db.doc("drill/"+who).set({stats:S.drillStats[who]||{}, updatedAt:new Date().toISOString()}); }
+  catch(err){ if(err&&err.code==="invalid_argument") S.canWrite=false; }
+  finally { SAVE.inflight=false; if(SAVE.dirty){ SAVE.dirty=false; flushSave(who); } else SAVE.pending=false; }
+}
+function drillSummary(id){
+  const st=S.drillStats[id]||{};
+  let mastered=0, weak=0;
+  for(const c of DRILL){ const e=st[c.id]; if(e&&e.s>0&&e.m===0) mastered++; if(e&&e.m>0) weak++; }
+  return {mastered, weak};
+}
+document.addEventListener("keydown", e=>{
+  if(S.tab!=="drill" || e.target.closest && e.target.closest("input,textarea")) return;
+  if(D.mode==="card" && D.chosen===null && ["1","2","3","4"].includes(e.key)){ e.preventDefault(); answer(+e.key-1); }
+  else if(D.mode==="card" && D.chosen!==null && (e.key==="Enter"||e.key===" "||e.key==="n")){ e.preventDefault(); nextCard(); }
+});
+function viewDrill(){
+  const m = member(S.me), sum = drillSummary(S.me);
+  const head = h("div",{class:"row",style:{justifyContent:"space-between"}},
+    h("h2",null,"Recognition drill"),
+    h("span",{class:"muted num",style:{fontSize:"13px"}},m.name+": "+sum.mastered+" of "+DRILL.length+" mastered"+(sum.weak?" · "+sum.weak+" to review":"")));
+  if(D.mode==="card") return h("section",{class:"panel dcard"}, head, drillCard());
+  if(D.mode==="done") return h("section",{class:"panel dcard"}, head, drillDone());
+  if(D.mode==="list") return h("section",{class:"panel dcard"}, head, drillList());
+  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All topics":t));
+  const lenBtns = [10,20,40].map(n=>h("button",{type:"button","aria-pressed":String(D.len===n),onclick:()=>{D.len=n;render();}},n+" cards"));
+  return h("section",{class:"panel dsetup"}, head,
+    h("p",{class:"muted",style:{margin:0}},"Read a clue, pick the technique. A wrong answer shows why and which notebook section has the code, and the card comes back a few cards later. Your weakest cards come first."),
+    h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Topic"),h("div",{class:"seg"},...tagBtns)),
+    h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Length"),h("div",{class:"seg"},...lenBtns)),
+    h("div",{class:"row"}, h("button",{class:"btn",type:"button",onclick:()=>startDrill(false)},"Start drill"),
+      h("button",{class:"status",type:"button",style:{padding:"9px 14px"},onclick:()=>{D.mode="list";render();}},"Study all "+DRILL.length+" cards")),
+    h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"Keyboard: 1–4 to answer, Enter for the next card."));
+}
+function drillCard(){
+  const c=D.card, answered=D.chosen!==null, ok=answered && D.opts[D.chosen]===c.answer;
+  const opts = h("div",{class:"opts"}, ...D.opts.map((o,i)=>{
+    let cls="opt"; if(answered){ if(o===c.answer) cls+=" right"; else if(i===D.chosen) cls+=" wrong"; }
+    return h("button",{class:cls,type:"button",disabled:answered,onclick:()=>answer(i)},h("span",{class:"k"},String(i+1)),h("span",null,o));
+  }));
+  const total = D.asked + D.queue.length + (answered?0:1);
+  return h("div",{class:"dcard"},
+    h("div",{class:"dprog"}, h("span",{class:"tag"},c.tag), h("span",{class:"muted num",style:{fontSize:"13px"}},D.right+" right · "+D.asked+" answered · "+D.queue.length+" left")),
+    h("div",{class:"clue"},c.clue),
+    opts,
+    answered ? h("div",{class:"feedback"+(ok?"":" bad")},
+        h("strong",null, ok?"Correct.":"Answer: "+c.answer),
+        h("span",null,c.why),
+        h("span",{class:"muted",style:{fontSize:"13px"}},"Notebook: "+c.where)) : null,
+    answered ? h("div",{class:"row"}, h("button",{class:"btn",type:"button",onclick:nextCard},D.queue.length?"Next card":"See results"),
+        h("button",{class:"status",type:"button",style:{padding:"9px 14px"},onclick:()=>{D.mode="setup";render();}},"Stop")) : null);
+}
+function drillDone(){
+  return h("div",{class:"dcard"},
+    h("div",{class:"clue"},D.right+" of "+D.asked+" right"),
+    D.missed.length ? h("div",{class:"stack"}, h("span",{class:"label"},"Missed this round"),
+      ...D.missed.map(c=>h("div",{class:"studyrow"},h("span",null,c.clue),h("span",{class:"a"},"→ "+c.answer),h("span",{class:"muted",style:{fontSize:"13px"}},"Notebook: "+c.where))))
+      : h("p",{style:{margin:0}},"No misses. Try a longer drill or another topic."),
+    h("div",{class:"row"},
+      D.missed.length? h("button",{class:"btn",type:"button",onclick:()=>startDrill(true)},"Drill the missed ones"):null,
+      h("button",{class:D.missed.length?"status":"btn",type:"button",style:D.missed.length?{padding:"9px 14px"}:null,onclick:()=>{D.mode="setup";render();}},"New drill")));
+}
+function drillList(){
+  const listBox = h("div");
+  const fill = ()=>{
+    const q=D.search.toLowerCase();
+    const rows=DRILL.filter(c=>(D.tag==="all"||c.tag===D.tag) && (!q || (c.clue+" "+c.answer+" "+c.tag).toLowerCase().includes(q)));
+    listBox.replaceChildren(...(rows.length? rows.map(c=>h("div",{class:"studyrow"},
+      h("span",null,h("span",{class:"tag",style:{marginRight:"8px"}},c.tag),c.clue),
+      h("span",{class:"a"},"→ "+c.answer),
+      h("span",{class:"muted",style:{fontSize:"13px"}},c.why+" Notebook: "+c.where))) : [h("p",{class:"muted"},"No cards match.")]));
+  };
+  fill();
+  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All":t));
+  return h("div",{class:"dcard"},
+    h("div",{class:"seg"},...tagBtns),
+    h("input",{type:"search",id:"drill-search",placeholder:"Search clues and techniques",value:D.search,oninput:e=>{D.search=e.target.value;fill();}}),
+    listBox,
+    h("div",{class:"row"},h("button",{class:"btn",type:"button",onclick:()=>{D.mode="setup";render();}},"Back to drill")));
+}
+
 /* ---------- views ---------- */
 function topicRow(mid, [tid,kind], editable){
   const t = T[tid], s = statusOf(mid,tid);
@@ -325,7 +476,7 @@ function viewToday(){
           h("p",{class:"muted",style:{margin:0}},"Your notebook pages: "+NOTEBOOK[m.id]+". Write them, test them, then print.")),
     h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Daily hour"),
       h("ol",{class:"routine"},
-        h("li",null,"5 min · technique quiz (see Practice tools below)"),
+        h("li",null,"5 min · Drill tab: 20 cards"),
         h("li",null,"15 min · read one topic above and trace it by hand on a tiny example"),
         h("li",null,"15 min · close the page and write the code from memory"),
         h("li",null,"25 min · one CSES problem. Stuck at 20 min: read the editorial, then rewrite it yourself"),
@@ -449,6 +600,9 @@ function viewTeam(){
       h("div",{class:"stack",style:{gap:"4px"}},
         h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Topics they can implement"),h("span",{class:"num",style:{fontSize:"13px"}},done+" / "+lane.length+(learning?" · "+learning+" learning":""))),
         h("div",{class:"bar"},h("span",{style:{width:(lane.length?100*done/lane.length:0)+"%"}}))),
+      (()=>{ const ds=drillSummary(m.id); return h("div",{class:"stack",style:{gap:"4px"}},
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill cards mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.mastered+" / "+DRILL.length+(ds.weak?" · "+ds.weak+" to review":""))),
+        h("div",{class:"bar"},h("span",{style:{width:(100*ds.mastered/DRILL.length)+"%"}}))); })(),
       latestStuck? h("div",{class:"stuck"},h("div",{class:"label"},"Stuck on · "+fmt(latestStuck.date)),latestStuck.stuck) : null);
   });
   const t0 = today();
@@ -499,7 +653,7 @@ function viewLog(){
 function render(){
   renderChrome();
   const v = document.getElementById("view");
-  const map = {today:viewToday,team:viewTeam,plan:viewPlan,coverage:viewCoverage,log:viewLog};
+  const map = {today:viewToday,drill:viewDrill,team:viewTeam,plan:viewPlan,coverage:viewCoverage,log:viewLog};
   v.replaceChildren((map[S.tab]||viewToday)());
 }
 
@@ -516,6 +670,12 @@ render();
   db.collection("checkins").onSnapshot(snap=>{
     S.checkins = snap.docs.map(d=>d.data()).filter(x=>x && member(x.member) && /^\d{4}-\d{2}-\d{2}$/.test(x.date||""));
     maybeRender();
+  }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
+  db.collection("drill").onSnapshot(snap=>{
+    for(const d of snap.docs){ if(!member(d.id)) continue;
+      if(d.id===S.me && SAVE.pending) continue;       // keep unsaved local answers
+      const x=d.data(); S.drillStats[d.id]=(x&&x.stats)||{}; }
+    if(S.tab!=="drill") maybeRender();
   }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
   db.collection("progress").onSnapshot(snap=>{
     const p={}; for(const d of snap.docs){ if(member(d.id)){ const x=d.data(); p[d.id]=(x&&x.topics)||{}; } }
