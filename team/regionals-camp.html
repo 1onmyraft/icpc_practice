@@ -694,7 +694,7 @@ render();
   db.collection("drill").onSnapshot(snap=>{
     for(const d of snap.docs){ if(!member(d.id)) continue;
       if(d.id===S.me && SAVE.pending) continue;       // keep unsaved local answers
-      const x=d.data(); S.drillStats[d.id]=(x&&x.stats)||{}; }
+      const x=d.data(); S.drillStats[d.id]=JSON.parse(JSON.stringify((x&&x.stats)||{})); }   // snapshots are frozen: keep an editable copy
     if(S.tab!=="drill") maybeRender();
   }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
   db.collection("progress").onSnapshot(snap=>{
