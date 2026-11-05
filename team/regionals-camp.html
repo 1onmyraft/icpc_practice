@@ -138,6 +138,14 @@ tr.cat td{font-family:var(--f-display);font-weight:700;font-size:14px;background
 .studyrow:first-child{border-top:0}
 .studyrow .a{font-weight:600}
 input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+.tasks{display:flex;flex-direction:column}
+.task{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.task:first-child{border-top:0}
+.task input{margin-top:4px;width:16px;height:16px;flex:none;accent-color:var(--ok)}
+.task.done span{color:var(--muted);text-decoration:line-through}
+.task.done a{text-decoration:none}
+.planDay{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px}
+.todaycard{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .log{display:flex;flex-direction:column}
 .entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
 .entry:first-child{border-top:0}
@@ -224,22 +232,45 @@ const PLAN = {
           [["lis","lane"],["grid","lane"],["interval","lane"]],
           [["bitdp","lane"],["treedp","lane"],["mitm","lane"]] ]
 };
-const WEEKS = [
-  {from:"2026-10-16",to:"2026-10-22",name:"Week 1",focus:"Common core + start your lane"},
-  {from:"2026-10-23",to:"2026-10-29",name:"Week 2",focus:"Lane depth"},
-  {from:"2026-10-30",to:"2026-11-05",name:"Week 3",focus:"Lane depth + notebook code"},
-  {from:"2026-11-06",to:"2026-11-11",name:"Week 4",focus:"Mock contests, upsolve, finish your notebook pages"},
-  {from:"2026-11-12",to:"2026-11-14",name:"Taper",focus:"Light review, quiz, sleep"}
+/* 9-day final schedule: [id, text, cses id (optional)] */
+const C = (id,name) => ["c"+id, "CSES "+id+" "+name+": find the page in the notebook, adapt it, get AC", id];
+const DAYS = [
+ {date:"2026-11-05", title:"Notebook + first lookups",
+  all:[["drill","Drill tab: 20 cards"],["index","Read notebook/index.md: constraints and keywords"],["stdlib","Skim notebook/python_stdlib.md"]],
+  tyler:[C(1671,"Shortest Routes I (Dijkstra, notebook/graphs.py)")], hugo:[C(1671,"Shortest Routes I (Dijkstra)")], edwin:[C(1633,"Dice Combinations (1D DP)")]},
+ {date:"2026-11-06", title:"Your lane through the notebook",
+  all:[["drill","Drill tab: 20 cards"],["confusing","In your check-in: list any notebook page that confused you"]],
+  tyler:[C(1079,"Binomial Coefficients (nCr)"),C(1713,"Counting Divisors (sieve)"),C(1648,"Dynamic Range Sum Queries (Fenwick)"),C(1649,"Dynamic Range Minimum Queries (segment tree)"),C(2195,"Convex Hull")],
+  hugo:[C(1675,"Road Reparation (MST)"),C(1672,"Shortest Routes II (Floyd-Warshall)"),C(1683,"Planets and Kingdoms (SCC)"),C(2076,"Necessary Roads (bridges)"),C(1753,"String Matching (KMP)")],
+  edwin:[C(1158,"Book Shop (knapsack)"),C(1145,"Increasing Subsequence (LIS)"),C(1639,"Edit Distance"),C(1653,"Elevator Rides (bitmask DP)"),C(1130,"Tree Matching (tree DP)")]},
+ {date:"2026-11-07", title:"Team contest #4 (5 hours)",
+  all:[["contest","Full 5-hour past regional, real rules, printed notebook only"],["gaps","In your check-in: problems where you couldn't name the technique or find the page"]]},
+ {date:"2026-11-08", title:"Upsolve + common core",
+  all:[["drill","Drill tab: 20 cards"],["upsolve","Upsolve 1 problem from Saturday"]],
+  tyler:[C(1676,"Road Construction (DSU)"),C(1667,"Message Route (BFS + parents)")],
+  hugo:[C(1634,"Minimizing Coins (1D DP)"),C(1620,"Factory Machines (binary search on answer)")],
+  edwin:[C(1671,"Shortest Routes I (Dijkstra)"),C(1676,"Road Construction (DSU)"),C(1679,"Course Schedule (topological sort)")]},
+ {date:"2026-11-09", title:"DP core",
+  all:[["drill","Drill tab: 20 cards"]],
+  tyler:[C(1633,"Dice Combinations"),C(1634,"Minimizing Coins"),C(1635,"Coin Combinations I"),C(1158,"Book Shop (knapsack)")],
+  hugo:[C(1131,"Tree Diameter"),C(1687,"Company Queries I (LCA)")],
+  edwin:[C(1097,"Removal Game (interval DP)"),C(1690,"Hamiltonian Flights (bitmask DP)")]},
+ {date:"2026-11-10", title:"3-hour mock",
+  all:[["mock","3-hour mock on a past regional you haven't seen"],["upsolve","Upsolve 1 problem from the mock"]]},
+ {date:"2026-11-11", title:"Notebook freeze",
+  all:[["drill","Drill tab: 20 cards"],["check","Check your lane's notebook pages one last time"],["print","Print the 25 pages (the team prints one copy)"]]},
+ {date:"2026-11-12", title:"Speed",
+  all:[["drill","Drill tab: 20 cards"],["speed","Re-solve 3 problems you've solved before, against a timer"],["checklist","Read the contest-day plan below together"]]},
+ {date:"2026-11-13", title:"Rest",
+  all:[["skim","Skim the notebook index (15 min)"],["roles","Agree on roles: who reads which problems, who types first"],["sleep","Sleep early"]]},
+ {date:"2026-11-14", title:"Contest day",
+  all:[["split","First 20 min: split problems A–E / F–J / K–M, call out the easy ones"],["board","Follow the scoreboard: solve what other teams solve first"],["test","Samples + 2 tiny tests before every submit; 3 wrong = re-read or switch"],["notebook","Recognize → notebook page → adapt"]]}
 ];
-const NOTEBOOK = {hugo:"Graphs, trees, strings, flows & matching (recognize-only)",
-  tyler:"Math, data structures, geometry, Grundy numbers (recognize-only)",
-  edwin:"DP patterns, bitmask & tree DP, meet in the middle"};
+function dayIndex(s){ let k=0; for(let i=0;i<DAYS.length;i++) if(DAYS[i].date<=s) k=i; return k; }
+function tasksFor(day, mid){ return day.all.map(t=>[day.date+":"+t[0],t[1],t[2]]).concat((day[mid]||[]).map(t=>[day.date+":"+t[0],t[1],t[2]])); }
 const EVENTS = [
-  ["2026-10-17","Team contest #1: a past Div 1 regional set (not PNW 2025, Tyler has seen it). Upsolve Sunday."],
-  ["2026-10-24","Team contest #2 + upsolve."],
-  ["2026-10-31","Team contest #3 + upsolve."],
-  ["2026-11-07","Team contest #4: full 5 hours, real rules, notebook only."],
-  ["2026-11-10","Short 3-hour mock. Last new-problem practice."],
+  ["2026-11-07","Team contest #4: full 5 hours, real rules, printed notebook only."],
+  ["2026-11-10","3-hour mock. Last new-problem practice."],
   ["2026-11-14","Regionals."]
 ];
 /* assessment levels: comfort/implementation. 5 Fully, 4 Reasonably, 3 Working on it, 2 Very basic, 1 No clue */
@@ -263,7 +294,6 @@ const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return 
 const diffDays = (a,b) => Math.round((parse(b)-parse(a))/86400000);
 const today = () => iso(new Date());
 const fmt = s => parse(s).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
-function weekIndex(s){ for(let i=0;i<WEEKS.length;i++) if(s>=WEEKS[i].from && s<=WEEKS[i].to) return i; return s<WEEKS[0].from?0:WEEKS.length-1; }
 
 /* ---------- tiny DOM helper (all user text goes in as text nodes) ---------- */
 function h(tag, attrs, ...kids){
@@ -295,8 +325,8 @@ function renderChrome(){
   const next = EVENTS.find(e=>e[0]>=t && e[0]!==CONTEST);
   document.getElementById("nextEvent").textContent = next ? (diffDays(t,next[0])===0?"Today":diffDays(t,next[0])+"d") : "–";
   document.getElementById("nextEventLabel").textContent = next ? "team contest · "+fmt(next[0]) : "no more team contests";
-  const w = WEEKS[weekIndex(t)];
-  document.getElementById("weekLabel").textContent = w.name+" · "+fmt(w.from)+" – "+fmt(w.to)+" · "+w.focus;
+  const di = dayIndex(t), dd = DAYS[di];
+  document.getElementById("weekLabel").textContent = (t<DAYS[0].date?"Starts "+fmt(DAYS[0].date):"Day "+(di+1)+" of "+DAYS.length+" · "+dd.title);
   const who = document.getElementById("who");
   who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{if(S.me!==m.id && D.mode!=="list") D.mode="setup"; S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
   const tabs = document.getElementById("tabs");
@@ -316,11 +346,33 @@ function streak(id){
   let n=0; while(days.has(d)){ n++; d=addDays(d,-1); } return n;
 }
 function weekTotals(id){
-  const w = WEEKS[weekIndex(today())];
-  const cs = checkinsOf(id).filter(c=>c.date>=w.from && c.date<=w.to);
+  const from = addDays(today(),-6);
+  const cs = checkinsOf(id).filter(c=>c.date>=from);
   return {minutes:cs.reduce((a,c)=>a+(+c.minutes||0),0), problems:cs.reduce((a,c)=>a+(+c.solved||0),0)};
 }
-function laneTopics(id){ return PLAN[id].flat(); }
+S.done = {};                   // member -> {taskId: true}
+const isDone = (mid,id) => !!(S.done[mid] && S.done[mid][id]);
+async function toggleTask(mid,id){
+  if(mid!==S.me) return;
+  const d = Object.assign({}, S.done[mid]||{}); if(d[id]) delete d[id]; else d[id]=true;
+  S.done[mid]=d; render();
+  try { localStorage.setItem("camp.done."+mid, JSON.stringify(d)); } catch(e){}
+  if(!S.db || !S.canWrite) return;
+  try { await S.db.doc("schedule/"+mid).set({done:d, updatedAt:new Date().toISOString()}); }
+  catch(err){ const m=h("div"); handleWriteError(err,m); S.dbError=m.textContent; render(); }
+}
+try { for(const m of MEMBERS){ const x=localStorage.getItem("camp.done."+m.id); if(x) S.done[m.id]=JSON.parse(x); } } catch(e){}
+function scheduleProgress(mid){
+  const upto = dayIndex(today()); let done=0,total=0;
+  DAYS.slice(0,upto+1).forEach(d=>tasksFor(d,mid).forEach(t=>{ total++; if(isDone(mid,t[0])) done++; }));
+  return {done,total};
+}
+function taskRow(mid, t, editable){
+  const [id,text,cses] = t, done = isDone(mid,id);
+  return h("label",{class:"task"+(done?" done":"")},
+    h("input",{type:"checkbox",id:"t-"+mid+"-"+id.replace(/[^a-z0-9]/gi,"_"),checked:done,disabled:!editable,onchange:()=>toggleTask(mid,id)}),
+    h("span",null,text, cses? [" ", h("a",{href:"https://cses.fi/problemset/task/"+cses,target:"_blank",rel:"noopener"},"open")] : null));
+}
 const statusOf = (id,topic) => (S.progress[id]&&S.progress[id][topic])||0;
 
 /* ---------- recognition drill ---------- */
@@ -474,33 +526,21 @@ function drillList(){
 }
 
 /* ---------- views ---------- */
-function topicRow(mid, [tid,kind], editable){
-  const t = T[tid], s = statusOf(mid,tid);
-  const labels = ["Not started","Learning","Can implement"];
-  return h("div",{class:"topic"},
-    h("div",{class:"stack",style:{gap:"2px"}},
-      h("div",{class:"row",style:{gap:"8px"}}, h("strong",null,t.n), h("span",{class:"tag"+(kind==="core"?" core":"")},kind==="core"?"Common core":"Your lane")),
-      t.l.length? h("div",{class:"muted",style:{fontSize:"13px"}},"Read: ", ...t.l.map(([u,n],i)=>[i?" · ":"",h("a",{href:u,target:"_blank",rel:"noopener"},n)])) : null),
-    h("button",{class:"status","data-s":String(s),disabled:!editable||!S.db||!S.canWrite,title:editable?"Click to change":"Only "+member(mid).name+" can change this",onclick:()=>setStatus(mid,tid,(s+1)%3)},labels[s]),
-    h("div",{class:"probs"}, ...t.p.map(([id,n])=>h("a",{class:"plink",href:"https://cses.fi/problemset/task/"+id,target:"_blank",rel:"noopener"},"CSES "+id+" · "+n))));
-}
-
 function viewToday(){
-  const m = member(S.me), t = today(), wi = weekIndex(t), w = WEEKS[wi];
-  const topics = wi<3 ? PLAN[m.id][wi] : [];
+  const m = member(S.me), t = today(), di = dayIndex(t), day = DAYS[di];
+  const tasks = tasksFor(day, m.id), done = tasks.filter(x=>isDone(m.id,x[0])).length;
   const left = h("section",{class:"panel"},
-    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,m.name+"’s week"), h("span",{class:"label"},w.name)),
-    h("p",{class:"muted",style:{margin:0}},"Lane: "+m.lane+". "+m.why),
-    topics.length ? h("div",null,...topics.map(x=>topicRow(m.id,x,true)))
-      : h("div",{class:"stack"}, h("p",{style:{margin:0}},"No new topics this week. "+w.focus+"."),
-          h("p",{class:"muted",style:{margin:0}},"Your notebook pages: "+NOTEBOOK[m.id]+". Write them, test them, then print.")),
-    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Daily hour"),
+    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,(t<day.date?"Coming up: ":"")+day.title), h("span",{class:"label"},"Day "+(di+1)+" of "+DAYS.length+" · "+fmt(day.date))),
+    h("p",{class:"muted",style:{margin:0}},m.name+": "+done+" of "+tasks.length+" done today. Lane: "+m.lane+"."),
+    h("div",{class:"tasks"},...tasks.map(x=>taskRow(m.id,x,true))),
+    di+1<DAYS.length ? h("div",{class:"stack",style:{gap:"4px"}}, h("span",{class:"label"},"Tomorrow · "+DAYS[di+1].title),
+      h("div",{class:"muted",style:{fontSize:"13px"}},tasksFor(DAYS[di+1],m.id).map(x=>x[1].replace(/: find the page.*$/,"")).join(" · "))) : null,
+    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"How to solve with the notebook"),
       h("ol",{class:"routine"},
-        h("li",null,"5 min · Drill tab: 20 cards"),
-        h("li",null,"15 min · read one topic above and trace it by hand on a tiny example"),
-        h("li",null,"15 min · close the page and write the code from memory"),
-        h("li",null,"25 min · one CSES problem. Stuck at 20 min: read the editorial, then rewrite it yourself"),
-        h("li",null,"Before every submit: samples + 2 tiny inputs you made up. Max 3 wrong tries, then switch."))));
+        h("li",null,"Read the constraints first: they tell you the complexity (notebook/index.md, top table)."),
+        h("li",null,"Name the technique. Not sure? Brute force → what repeats? → what removes it?"),
+        h("li",null,"Open that notebook page, copy the template, adapt the input and output."),
+        h("li",null,"Samples + 2 tiny inputs you made up, then submit. 3 wrong = stop, re-read."))));
   return h("div",{class:"stack",style:{gap:"22px"}}, h("div",{class:"grid2"}, left, checkinForm(m)), toolsPanel());
 }
 
@@ -538,10 +578,11 @@ function toolsPanel(){
         h("a",{class:"plink",href:"https://github.com/1onmyraft/icpc_practice/blob/claude/icpc-regionals-prep-4y8j1o/"+f,target:"_blank",rel:"noopener"},n)))));
 }
 
+const TOPIC_NAMES = {drill:"Drill", notebook:"Notebook pages", cses:"CSES / Kattis problems", contest:"Team contest / upsolve", other:"Other"};
 function checkinForm(m){
-  const t = today(), wi = weekIndex(t);
+  const t = today();
   const existing = S.checkins.find(c=>c.member===m.id && c.date===t);
-  const topicOpts = (wi<3?PLAN[m.id][wi].map(x=>x[0]):[]).map(id=>[id,T[id].n]).concat([["contest","Team contest / upsolve"],["notebook","Notebook pages"],["other","Other"]]);
+  const topicOpts = Object.entries(TOPIC_NAMES);
   const chosen = new Set(existing&&existing.topics||[]);
   const msg = h("div",{class:"msg",role:"status"});
   const disabled = !S.db || !S.canWrite;
@@ -607,7 +648,7 @@ function viewTeam(){
     const days = [...Array(7)].map((_,i)=>addDays(t,i-6));
     const byDay = Object.fromEntries(cs.map(c=>[c.date,c]));
     const wt = weekTotals(m.id);
-    const lane = laneTopics(m.id), done = lane.filter(x=>statusOf(m.id,x[0])===2).length, learning = lane.filter(x=>statusOf(m.id,x[0])===1).length;
+    const sp = scheduleProgress(m.id);
     const latestStuck = cs.filter(c=>c.stuck).sort((a,b)=>a.date<b.date?1:-1)[0];
     return h("article",{class:"card",style:{"--c":m.color}},
       h("div",{class:"row",style:{justifyContent:"space-between"}}, h("div",{class:"row",style:{gap:"8px"}},dot(m.color),h("h3",null,m.name)), pill),
@@ -615,11 +656,11 @@ function viewTeam(){
       h("div",{class:"strip","aria-label":"Last 7 days"}, ...days.map(d=>{ const c=byDay[d]; return h("div",{class:c?"on":"",title:fmt(d)+(c?": "+c.minutes+" min, "+c.solved+" solved":": no check-in")},c?String(c.minutes):parse(d).toLocaleDateString(undefined,{weekday:"narrow"})); })),
       h("div",{class:"stats"},
         h("div",null,h("div",{class:"v num"},String(streak(m.id))),h("div",{class:"label"},"day streak")),
-        h("div",null,h("div",{class:"v num"},String(wt.minutes)),h("div",{class:"label"},"min this week")),
-        h("div",null,h("div",{class:"v num"},String(wt.problems)),h("div",{class:"label"},"AC this week"))),
+        h("div",null,h("div",{class:"v num"},String(wt.minutes)),h("div",{class:"label"},"min, last 7 days")),
+        h("div",null,h("div",{class:"v num"},String(wt.problems)),h("div",{class:"label"},"AC, last 7 days"))),
       h("div",{class:"stack",style:{gap:"4px"}},
-        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Topics they can implement"),h("span",{class:"num",style:{fontSize:"13px"}},done+" / "+lane.length+(learning?" · "+learning+" learning":""))),
-        h("div",{class:"bar"},h("span",{style:{width:(lane.length?100*done/lane.length:0)+"%"}}))),
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Schedule tasks done (so far)"),h("span",{class:"num",style:{fontSize:"13px"}},sp.done+" / "+sp.total)),
+        h("div",{class:"bar"},h("span",{style:{width:(sp.total?100*sp.done/sp.total:0)+"%"}}))),
       (()=>{ const ds=drillSummary(m.id); return h("div",{class:"stack",style:{gap:"4px"}},
         h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill: lane + core mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.laneMastered+" / "+ds.laneTotal+" · "+ds.mastered+"/"+DRILL.length+" overall")),
         h("div",{class:"bar"},h("span",{style:{width:(100*ds.laneMastered/ds.laneTotal)+"%"}}))); })(),
@@ -632,13 +673,16 @@ function viewTeam(){
 }
 
 function viewPlan(){
-  return h("div",{class:"stack",style:{gap:"22px"}},
-    h("p",{class:"muted",style:{margin:0}},"Weeks 1–3 add topics. Week 4 is mock contests and notebook pages. Only the person whose plan it is can change their topic status."),
-    h("div",{class:"planGrid"}, ...MEMBERS.map(m=>h("section",{class:"panel",style:{borderTop:"4px solid "+m.color}},
-      h("div",{class:"row",style:{gap:"8px"}},dot(m.color),h("h2",null,m.name)),
-      h("div",{class:"muted",style:{fontSize:"13px"}},m.lane),
-      ...PLAN[m.id].map((wk,i)=>h("div",{class:"week"}, h("span",{class:"label"},WEEKS[i].name+" · "+fmt(WEEKS[i].from)+" – "+fmt(WEEKS[i].to)), h("div",null,...wk.map(x=>topicRow(m.id,x,S.me===m.id))))),
-      h("div",{class:"week"}, h("span",{class:"label"},"Week 4 · notebook pages"), h("p",{style:{margin:0}},NOTEBOOK[m.id]))))));
+  const t = today();
+  return h("div",{class:"stack",style:{gap:"16px"}},
+    h("p",{class:"muted",style:{margin:0}},"Nine days to the contest. Everyone does the shared tasks; each person also has their own lane tasks. You can tick only your own."),
+    ...DAYS.map((d,i)=>h("section",{class:"panel"+(d.date===t?" todaycard":""),style:d.date<t?{opacity:.75}:null},
+      h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h3",null,"Day "+(i+1)+" · "+d.title), h("span",{class:"label"},fmt(d.date)+(d.date===t?" · today":""))),
+      h("div",{class:"planDay"},
+        h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Everyone"), ...d.all.map(x=>h("div",{style:{fontSize:"14px"}},"• "+x[1]))),
+        ...MEMBERS.filter(m=>d[m.id]).map(m=>h("div",{class:"stack",style:{gap:"6px"}},
+          h("span",{class:"label",style:{display:"flex",gap:"6px",alignItems:"center"}},dot(m.color),m.name),
+          ...d[m.id].map(x=>taskRow(m.id,[d.date+":"+x[0],x[1],x[2]],m.id===S.me))))))));
 }
 
 function viewCoverage(){
@@ -666,7 +710,7 @@ function viewLog(){
     return h("div",{class:"entry"}, dot(m.color), h("div",{class:"stack",style:{gap:"2px",minWidth:0}},
       h("div",{class:"row",style:{gap:"8px"}},h("strong",null,m.name),h("span",{class:"muted num",style:{fontSize:"13px"}},fmt(c.date)+" · "+(c.minutes||0)+" min · "+(c.solved||0)+" AC"+(c.confidence?" · confidence "+c.confidence+"/5":""))),
       c.problems? h("div",{class:"mono",style:{fontSize:"13px",overflowWrap:"anywhere"}},c.problems):null,
-      (c.topics&&c.topics.length)? h("div",{class:"chips"},...c.topics.map(id=>h("span",{class:"tag"},T[id]?T[id].n:id==="contest"?"Team contest":id==="notebook"?"Notebook":"Other"))):null,
+      (c.topics&&c.topics.length)? h("div",{class:"chips"},...c.topics.map(id=>h("span",{class:"tag"},TOPIC_NAMES[id]||(T[id]?T[id].n:"Other")))):null,
       c.stuck? h("div",{class:"stuck"},c.stuck):null)); })));
 }
 
@@ -696,6 +740,10 @@ render();
       if(d.id===S.me && SAVE.pending) continue;       // keep unsaved local answers
       const x=d.data(); S.drillStats[d.id]=JSON.parse(JSON.stringify((x&&x.stats)||{})); }   // snapshots are frozen: keep an editable copy
     if(S.tab!=="drill") maybeRender();
+  }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
+  db.collection("schedule").onSnapshot(snap=>{
+    for(const d of snap.docs){ if(member(d.id)){ const x=d.data(); S.done[d.id]=JSON.parse(JSON.stringify((x&&x.done)||{})); } }
+    maybeRender();
   }, e=>{ S.dbError="Live updates stopped. Reload the page to reconnect."; render(); });
   db.collection("progress").onSnapshot(snap=>{
     const p={}; for(const d of snap.docs){ if(member(d.id)){ const x=d.data(); p[d.id]=(x&&x.topics)||{}; } }
