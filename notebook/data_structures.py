@@ -42,21 +42,42 @@ def rect(S, r1, c1, r2, c2):
     return S[r2 + 1][c2 + 1] - S[r1][c2 + 1] - S[r2 + 1][c1] + S[r1][c1]
 
 
-# ---------- Fenwick tree (BIT): point add, prefix sum ----------
-# 1-INDEXED. T[i] holds the sum of a block ending at i, length = lowest bit of i.
-# "set a[k] = u"  ->  add(k, u - a[k]); a[k] = u      (keep the plain array a!)
-# range sum a[l..r] = prefix(r) - prefix(l - 1)
+# ---------- Fenwick tree (BIT): point add/set, prefix sum ----------
+# 1-INDEXED positions 1..n. T[i] holds the sum of a block ending at i, length = lowest bit of i.
+#   fw = Fenwick(n)              all zeros
+#   fw = Fenwick([3, 1, 4])      from a normal Python list: list[0] -> position 1. O(n) build
+#   len(fw) -> n    fw.set(k, u) -> a[k] = u    fw.get(k) -> a[k]
+#   range sum a[l..r] = fw.range_sum(l, r) = prefix(r) - prefix(l - 1)
 # Does NOT do range min (min can't be subtracted) -> use segment tree.
 class Fenwick:
-    def __init__(self, n):
-        self.n = n
-        self.T = [0] * (n + 1)
+    def __init__(self, n_or_list):
+        if isinstance(n_or_list, int):
+            vals = [0] * n_or_list
+        else:
+            vals = list(n_or_list)
+        self.n = n = len(vals)
+        self.a = [0] + vals                 # plain values, so set() knows the old value
+        self.T = T = self.a[:]
+        for i in range(1, n + 1):           # O(n) build: push each box into its parent
+            j = i + (i & -i)
+            if j <= n:
+                T[j] += T[i]
+
+    def __len__(self):
+        return self.n
 
     def add(self, i, d):            # a[i] += d
+        self.a[i] += d
         T, n = self.T, self.n
         while i <= n:
             T[i] += d
             i += i & -i             # climb to every box that contains i
+
+    def set(self, i, v):            # a[i] = v
+        self.add(i, v - self.a[i])
+
+    def get(self, i):
+        return self.a[i]
 
     def prefix(self, i):            # a[1] + ... + a[i]
         T, s = self.T, 0
@@ -164,6 +185,8 @@ if __name__ == "__main__":
         fw = Fenwick(n)
         for i, x in enumerate(a):
             fw.add(i + 1, x)
+        fw2 = Fenwick(a)
+        assert len(fw) == len(fw2) == n and fw2.T == fw.T
         for l in range(n):
             for r in range(l, n):
                 seg = a[l:r + 1]
@@ -177,9 +200,11 @@ if __name__ == "__main__":
         for _ in range(30):                 # updates
             k, u = random.randrange(n), random.randint(-20, 20)
             fw.add(k + 1, u - b[k]); b[k] = u
+            fw2.set(k + 1, u)
+            assert fw2.get(k + 1) == u
             st.set(k, u); stsum.set(k, u); stg.set(k, abs(u))
             l = random.randrange(n); r = random.randint(l, n - 1)
-            assert fw.range_sum(l + 1, r + 1) == sum(b[l:r + 1])
+            assert fw.range_sum(l + 1, r + 1) == sum(b[l:r + 1]) == fw2.range_sum(l + 1, r + 1)
             assert st.query(l, r + 1) == min(b[l:r + 1])
             assert stsum.query(l, r + 1) == sum(b[l:r + 1])
             g = 0
