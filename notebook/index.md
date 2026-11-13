@@ -25,7 +25,8 @@ Python does roughly 1e7 simple steps per second. If it is too slow, switch to C+
 | maximum number of non-overlapping | greedy by end time |
 | minimum number of operations | BFS over states, greedy, or DP |
 | k-th smallest / largest | sort, heap, binary search |
-| range sum / range min with updates | Fenwick, segment tree, sparse table (no updates) |
+| range sum / range min with updates | Fenwick, segment tree, sparse table (no updates): data_structures.py |
+| sum / min of every window of size k | prefix sums, monotonic deque: data_structures.py |
 | next greater / smaller element | monotonic stack |
 | substring, pattern, prefix | KMP, Z, hashing, trie |
 | convex, farthest points, polygon area | cross product, hull, rotating calipers |
