@@ -155,12 +155,12 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px
 <div class="wrap">
   <header class="top">
     <div class="stack" style="gap:4px">
-      <span class="label">ICPC North America Regionals · Div 1 · Sat Nov 14</span>
+      <span class="label">ICPC PacNW Regionals · Div 1 · Nov 2027 · ~4 h/week</span>
       <h1>Regionals Camp</h1>
     </div>
     <div class="count">
       <div><div class="big num" id="daysLeft">–</div><div class="label">days to contest</div></div>
-      <div><div class="big num" id="nextEvent">–</div><div class="label" id="nextEventLabel">next team contest</div></div>
+      <div><div class="big num" id="nextEvent">–</div><div class="label" id="nextEventLabel">next checkpoint</div></div>
     </div>
   </header>
 
@@ -178,7 +178,7 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px
 (function(){
 "use strict";
 /* ---------- static plan data (from the team's assessment sheets) ---------- */
-const CONTEST = "2026-11-14";
+const CONTEST = "2027-11-13";   /* estimate: confirm when PacNW announces */
 const MEMBERS = [
   {id:"hugo",  name:"Hugo",  color:"var(--hugo)",  lane:"Graphs, trees & strings",
    why:"Strongest graph sheet: DFS/BFS, Dijkstra and DSU already solid; head start on tries."},
@@ -232,46 +232,70 @@ const PLAN = {
           [["lis","lane"],["grid","lane"],["interval","lane"]],
           [["bitdp","lane"],["treedp","lane"],["mitm","lane"]] ]
 };
-/* 9-day final schedule: [id, text, cses id (optional)] */
-const C = (id,name) => ["c"+id, "CSES "+id+" "+name+": find the page in the notebook, adapt it, get AC", id];
-const DAYS = [
- {date:"2026-11-05", title:"Notebook + first lookups",
-  all:[["drill","Drill tab: 20 cards"],["index","Read notebook/index.md: constraints and keywords"],["stdlib","Skim notebook/python_stdlib.md"]],
-  tyler:[C(1671,"Shortest Routes I (Dijkstra, notebook/graphs.py)")], hugo:[C(1671,"Shortest Routes I (Dijkstra)")], edwin:[C(1633,"Dice Combinations (1D DP)")]},
- {date:"2026-11-06", title:"Your lane through the notebook",
-  all:[["drill","Drill tab: 20 cards"],["confusing","In your check-in: list any notebook page that confused you"]],
-  tyler:[C(1079,"Binomial Coefficients (nCr)"),C(1713,"Counting Divisors (sieve)"),C(1648,"Dynamic Range Sum Queries (Fenwick)"),C(1649,"Dynamic Range Minimum Queries (segment tree)"),C(2195,"Convex Hull")],
-  hugo:[C(1675,"Road Reparation (MST)"),C(1672,"Shortest Routes II (Floyd-Warshall)"),C(1683,"Planets and Kingdoms (SCC)"),C(2076,"Necessary Roads (bridges)"),C(1753,"String Matching (KMP)")],
-  edwin:[C(1158,"Book Shop (knapsack)"),C(1145,"Increasing Subsequence (LIS)"),C(1639,"Edit Distance"),C(1653,"Elevator Rides (bitmask DP)"),C(1130,"Tree Matching (tree DP)")]},
- {date:"2026-11-07", title:"Team contest #4 (5 hours)",
-  all:[["contest","Full 5-hour past regional, real rules, printed notebook only"],["gaps","In your check-in: problems where you couldn't name the technique or find the page"]]},
- {date:"2026-11-08", title:"Upsolve + common core",
-  all:[["drill","Drill tab: 20 cards"],["upsolve","Upsolve 1 problem from Saturday"]],
-  tyler:[C(1676,"Road Construction (DSU)"),C(1667,"Message Route (BFS + parents)")],
-  hugo:[C(1634,"Minimizing Coins (1D DP)"),C(1620,"Factory Machines (binary search on answer)")],
-  edwin:[C(1671,"Shortest Routes I (Dijkstra)"),C(1676,"Road Construction (DSU)"),C(1679,"Course Schedule (topological sort)")]},
- {date:"2026-11-09", title:"DP core",
-  all:[["drill","Drill tab: 20 cards"]],
-  tyler:[C(1633,"Dice Combinations"),C(1634,"Minimizing Coins"),C(1635,"Coin Combinations I"),C(1158,"Book Shop (knapsack)")],
-  hugo:[C(1131,"Tree Diameter"),C(1687,"Company Queries I (LCA)")],
-  edwin:[C(1097,"Removal Game (interval DP)"),C(1690,"Hamiltonian Flights (bitmask DP)")]},
- {date:"2026-11-10", title:"3-hour mock",
-  all:[["mock","3-hour mock on a past regional you haven't seen"],["upsolve","Upsolve 1 problem from the mock"]]},
- {date:"2026-11-11", title:"Notebook freeze",
-  all:[["drill","Drill tab: 20 cards"],["check","Check your lane's notebook pages one last time"],["print","Print the 25 pages (the team prints one copy)"]]},
- {date:"2026-11-12", title:"Speed",
-  all:[["drill","Drill tab: 20 cards"],["speed","Re-solve 3 problems you've solved before, against a timer"],["checklist","Read the contest-day plan below together"]]},
- {date:"2026-11-13", title:"Rest",
-  all:[["skim","Skim the notebook index (15 min)"],["roles","Agree on roles: who reads which problems, who types first"],["sleep","Sleep early"]]},
- {date:"2026-11-14", title:"Contest day",
-  all:[["split","First 20 min: split problems A–E / F–J / K–M, call out the easy ones"],["board","Follow the scoreboard: solve what other teams solve first"],["test","Samples + 2 tiny tests before every submit; 3 wrong = re-read or switch"],["notebook","Recognize → notebook page → adapt"]]}
-];
-function dayIndex(s){ let k=0; for(let i=0;i<DAYS.length;i++) if(DAYS[i].date<=s) k=i; return k; }
-function tasksFor(day, mid){ return day.all.map(t=>[day.date+":"+t[0],t[1],t[2]]).concat((day[mid]||[]).map(t=>[day.date+":"+t[0],t[1],t[2]])); }
+/* year plan: ~4 hours a week, Mon-Sun weeks, aimed at the Nov 2027 regional */
+const START = "2026-11-16";   /* Monday after the 2026 regional */
+function addDaysPlain(s,n){ const [y,m,d]=s.split("-").map(Number); const x=new Date(y,m-1,d+n); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+const WEEKS = [
+  {phase:"Phase 1 · Foundations (Python)", title:"Sorting + greedy", tasks:[["learn","Learn it (30 min): notebook techniques.py: greedy section, plus one explanation; write the code once from memory"],["c1629","CSES 1629 Movie Festival",1629],["c1084","CSES 1084 Apartments",1084],["c1090","CSES 1090 Ferris Wheel",1090],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Two pointers + sweep", tasks:[["learn","Learn it (30 min): notebook techniques.py: two pointers, sliding window, plus one explanation; write the code once from memory"],["c1640","CSES 1640 Sum of Two Values",1640],["c1641","CSES 1641 Sum of Three Values",1641],["c1619","CSES 1619 Restaurant Customers",1619],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Prefix sums + hash-map counting", tasks:[["learn","Learn it (30 min): notebook data_structures.py + techniques.py: count_subarrays_sum, plus one explanation; write the code once from memory"],["c1646","CSES 1646 Static Range Sum Queries",1646],["c1661","CSES 1661 Subarray Sums II",1661],["c1662","CSES 1662 Subarray Divisibility",1662],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Binary search on the answer", tasks:[["learn","Learn it (30 min): notebook math_nt.py: first_true / last_true, plus one explanation; write the code once from memory"],["c1620","CSES 1620 Factory Machines",1620],["c1085","CSES 1085 Array Division",1085],["c2422","CSES 2422 Multiplication Table",2422],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"BFS on graphs and grids", tasks:[["learn","Learn it (30 min): notebook graphs.py: bfs, grid_bfs, plus one explanation; write the code once from memory"],["c1192","CSES 1192 Counting Rooms",1192],["c1193","CSES 1193 Labyrinth",1193],["c1667","CSES 1667 Message Route",1667],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"DFS, components, bipartite, cycles", tasks:[["learn","Learn it (30 min): notebook graphs.py: components, bipartite, plus one explanation; write the code once from memory"],["c1666","CSES 1666 Building Roads",1666],["c1668","CSES 1668 Building Teams",1668],["c1669","CSES 1669 Round Trip",1669],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Dijkstra + all-pairs shortest paths", tasks:[["learn","Learn it (30 min): notebook graphs.py: dijkstra, floyd, plus one explanation; write the code once from memory"],["c1671","CSES 1671 Shortest Routes I",1671],["c1195","CSES 1195 Flight Discount",1195],["c1672","CSES 1672 Shortest Routes II",1672],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"DSU + minimum spanning tree", tasks:[["learn","Learn it (30 min): notebook graphs.py: DSU, kruskal, plus one explanation; write the code once from memory"],["c1676","CSES 1676 Road Construction",1676],["c1675","CSES 1675 Road Reparation",1675],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"1D DP", tasks:[["learn","Learn it (30 min): notebook dp.py: header (the 4 steps), plus one explanation; write the code once from memory"],["c1633","CSES 1633 Dice Combinations",1633],["c1634","CSES 1634 Minimizing Coins",1634],["c1635","CSES 1635 Coin Combinations I",1635],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 1 · Foundations (Python)", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Switch to C++", tasks:[["setup","Set up C++ (g++ -O2), copy notebook/template.cpp, fast I/O"],["c1640","Re-solve CSES 1640 Sum of Two Values in C++",1640],["c1671","Re-solve CSES 1671 Shortest Routes I in C++ (watch int overflow: long long)",1671],["c1633","Re-solve CSES 1633 Dice Combinations in C++",1633],["contest","One contest in C++ (90 min). Upsolve 1 problem"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Knapsack + coin change", tasks:[["learn","Learn it (30 min): notebook dp.py: knapsack, coin_ways, plus one explanation; write the code once from memory"],["c1636","CSES 1636 Coin Combinations II",1636],["c1158","CSES 1158 Book Shop",1158],["c1745","CSES 1745 Money Sums",1745],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Sequence DP: LIS, edit distance", tasks:[["learn","Learn it (30 min): notebook dp.py: lis_length, edit_distance, plus one explanation; write the code once from memory"],["c1145","CSES 1145 Increasing Subsequence",1145],["c1639","CSES 1639 Edit Distance",1639],["c1093","CSES 1093 Two Sets II",1093],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Grid DP + counting DP", tasks:[["learn","Learn it (30 min): notebook dp.py: grid_paths, plus one explanation; write the code once from memory"],["c1638","CSES 1638 Grid Paths I",1638],["c1746","CSES 1746 Array Description",1746],["c2413","CSES 2413 Counting Towers",2413],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Topological sort + DAG DP", tasks:[["learn","Learn it (30 min): notebook graphs.py: topo_sort, plus one explanation; write the code once from memory"],["c1679","CSES 1679 Course Schedule",1679],["c1680","CSES 1680 Longest Flight Route",1680],["c1681","CSES 1681 Game Routes",1681],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Fenwick tree + sparse table", tasks:[["learn","Learn it (30 min): notebook data_structures.py: Fenwick, sparse table, plus one explanation; write the code once from memory"],["c1648","CSES 1648 Dynamic Range Sum Queries",1648],["c1647","CSES 1647 Static Range Minimum Queries",1647],["c1650","CSES 1650 Range Xor Queries",1650],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Segment tree", tasks:[["learn","Learn it (30 min): notebook data_structures.py: SegTree, plus one explanation; write the code once from memory"],["c1649","CSES 1649 Dynamic Range Minimum Queries",1649],["c1190","CSES 1190 Subarray Sum Queries",1190],["c1651","CSES 1651 Range Update Queries",1651],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Number theory: divisors, gcd, fast power", tasks:[["learn","Learn it (30 min): notebook math_nt.py: sieve, divisors, pow, plus one explanation; write the code once from memory"],["c1713","CSES 1713 Counting Divisors",1713],["c1081","CSES 1081 Common Divisors",1081],["c1095","CSES 1095 Exponentiation",1095],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Combinatorics mod p", tasks:[["learn","Learn it (30 min): notebook math_nt.py: Comb, plus one explanation; write the code once from memory"],["c1079","CSES 1079 Binomial Coefficients",1079],["c1715","CSES 1715 Creating Strings II",1715],["c1716","CSES 1716 Distributing Apples",1716],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Geometry I: cross product, segments, area", tasks:[["learn","Learn it (30 min): notebook geometry.py: cross, seg_intersect, area2, plus one explanation; write the code once from memory"],["c2189","CSES 2189 Point Location Test",2189],["c2190","CSES 2190 Line Segment Intersection",2190],["c2191","CSES 2191 Polygon Area",2191],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Trees: subtree sizes, diameter, distances", tasks:[["learn","Learn it (30 min): notebook graphs.py: tree_diameter + dp.py: tree DP, plus one explanation; write the code once from memory"],["c1674","CSES 1674 Subordinates",1674],["c1131","CSES 1131 Tree Diameter",1131],["c1132","CSES 1132 Tree Distances I",1132],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"LCA (binary lifting)", tasks:[["learn","Learn it (30 min): notebook graphs.py: LCA, plus one explanation; write the code once from memory"],["c1687","CSES 1687 Company Queries I",1687],["c1688","CSES 1688 Company Queries II",1688],["c1135","CSES 1135 Distance Queries",1135],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 2 · C++ + core DP and data structures", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Tree DP + Euler tour queries", tasks:[["learn","Learn it (30 min): notebook dp.py: tree_max_independent, plus one explanation; write the code once from memory"],["c1130","CSES 1130 Tree Matching",1130],["c1137","CSES 1137 Subtree Queries",1137],["c1138","CSES 1138 Path Queries",1138],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Bitmask DP + meet in the middle", tasks:[["learn","Learn it (30 min): notebook dp.py: tsp + techniques.py: meet_in_middle, plus one explanation; write the code once from memory"],["c1623","CSES 1623 Apple Division",1623],["c1653","CSES 1653 Elevator Rides",1653],["c1628","CSES 1628 Meet in the Middle",1628],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Interval DP", tasks:[["learn","Learn it (30 min): notebook dp.py: interval_merge_cost, plus one explanation; write the code once from memory"],["c1097","CSES 1097 Removal Game",1097],["c1744","CSES 1744 Rectangle Cutting",1744],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Bellman-Ford, reachability, multi-source BFS", tasks:[["learn","Learn it (30 min): notebook graphs.py: bellman_ford, plus one explanation; write the code once from memory"],["c1197","CSES 1197 Cycle Finding",1197],["c1682","CSES 1682 Flight Routes Check",1682],["c1194","CSES 1194 Monsters",1194],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"SCC + 2-SAT", tasks:[["learn","Learn it (30 min): notebook graphs.py: scc (2-SAT note under it), plus one explanation; write the code once from memory"],["c1683","CSES 1683 Planets and Kingdoms",1683],["c1684","CSES 1684 Giant Pizza",1684],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Lazy segment tree + monotonic stack", tasks:[["learn","Learn it (30 min): notebook cp-algorithms: segment tree (lazy), plus one explanation; write the code once from memory"],["c1735","CSES 1735 Range Updates and Sums",1735],["c1651","CSES 1651 Range Update Queries",1651],["c1645","CSES 1645 Nearest Smaller Values",1645],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Max flow + min cut", tasks:[["learn","Learn it (30 min): notebook graphs.py: Dinic, plus one explanation; write the code once from memory"],["c1694","CSES 1694 Download Speed",1694],["c1695","CSES 1695 Police Chase",1695],["c1711","CSES 1711 Distinct Routes",1711],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Bipartite matching + bridges", tasks:[["learn","Learn it (30 min): notebook graphs.py: bipartite_matching, plus one explanation; write the code once from memory"],["c1696","CSES 1696 School Dance",1696],["c2076","CSES 2076 Necessary Roads",2076],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Strings: KMP + Z-function", tasks:[["learn","Learn it (30 min): notebook strings.py: prefix_function, z_function, plus one explanation; write the code once from memory"],["c1753","CSES 1753 String Matching",1753],["c1732","CSES 1732 Finding Borders",1732],["c1733","CSES 1733 Finding Periods",1733],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Hashing, trie, palindromes", tasks:[["learn","Learn it (30 min): notebook strings.py: Hash, Trie, manacher, plus one explanation; write the code once from memory"],["c1731","CSES 1731 Word Combinations",1731],["c1111","CSES 1111 Longest Palindrome",1111],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Matrix power + inclusion-exclusion", tasks:[["learn","Learn it (30 min): notebook math_nt.py: mat_pow, plus one explanation; write the code once from memory"],["c1096","CSES 1096 Throwing Dice",1096],["c1722","CSES 1722 Fibonacci Numbers",1722],["c2185","CSES 2185 Prime Multiples",2185],["c1717","CSES 1717 Christmas Party",1717],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Geometry II: point in polygon, hull, closest pair", tasks:[["learn","Learn it (30 min): notebook geometry.py, plus one explanation; write the code once from memory"],["c2192","CSES 2192 Point in Polygon",2192],["c2193","CSES 2193 Polygon Lattice Points",2193],["c2195","CSES 2195 Convex Hull",2195],["c2194","CSES 2194 Minimum Euclidean Distance",2194],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 3 · Harder techniques", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 4 · Contest season", title:"Game theory: Nim, Grundy", tasks:[["learn","Learn it (30 min): notebook cp-algorithms: Sprague-Grundy, plus one explanation; write the code once from memory"],["c1730","CSES 1730 Nim Game I",1730],["c1098","CSES 1098 Nim Game II",1098],["c1099","CSES 1099 Stair Game",1099],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 4 · Contest season", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 4 · Contest season", title:"Harder greedy + scheduling", tasks:[["learn","Learn it (30 min): notebook techniques.py: greedy section, plus one explanation; write the code once from memory"],["c1631","CSES 1631 Reading Books",1631],["c1632","CSES 1632 Movie Festival II",1632],["c1630","CSES 1630 Tasks and Deadlines",1630],["contest","One contest (90 min): Codeforces Div 2 or AtCoder ABC, live or virtual. Upsolve 1 problem"],["redo","Re-solve 1 problem from last week from a blank file (15 min)"]]},
+  {phase:"Phase 4 · Contest season", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 4 · Contest season", title:"Notebook rebuild", tasks:[["port","Port your most-used notebook pages to C++ (data structures, graphs, DP)"],["test","Test each ported page against the Python version on random input"],["contest","One contest (90 min). Upsolve 1 problem"]]},
+  {phase:"Phase 4 · Contest season", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 4 · Contest season", title:"Mock regional", tasks:[["mock","3-hour virtual past regional on Kattis (PacNW, NAC, SoCal, Mid-Central). Notebook only"],["upsolve","Upsolve 1 problem you were close on"],["gaps","In your check-in: which problems you couldn't name a technique for"]]},
+  {phase:"Phase 4 · Contest season", title:"Contest week: rest", tasks:[["skim","Skim the notebook index and SPOT IT blocks (30 min)"],["print","Print the notebook (25 pages max), one copy each"],["roles","Agree on roles with your team: who reads, who types first"],["sleep","No new topics. Sleep."]]}
+].map((w,i)=>Object.assign(w,{start:addDaysPlain(START,7*i)}));
+function weekIndex(s){ let k=0; for(let i=0;i<WEEKS.length;i++) if(WEEKS[i].start<=s) k=i; return k; }
+function tasksFor(w, mid){ return w.tasks.map(t=>[w.start+":"+t[0],t[1],t[2]]); }
 const EVENTS = [
-  ["2026-11-07","Team contest #4: full 5 hours, real rules, printed notebook only."],
-  ["2026-11-10","3-hour mock. Last new-problem practice."],
-  ["2026-11-14","Regionals."]
+  ["2027-02-15","Checkpoint: Codeforces ~1500. Easy third of a regional, fast and clean."],
+  ["2027-05-17","Checkpoint: ~1700. 4-5 solves on a mock regional."],
+  ["2027-08-16","Checkpoint: ~1900. 6-7 solves on a mock regional."],
+  ["2027-11-13","Regionals (date to confirm)."]
 ];
 /* assessment levels: comfort/implementation. 5 Fully, 4 Reasonably, 3 Working on it, 2 Very basic, 1 No clue */
 const CATS = [
@@ -324,9 +348,9 @@ function renderChrome(){
   document.getElementById("daysLeft").textContent = Math.max(0,diffDays(t,CONTEST));
   const next = EVENTS.find(e=>e[0]>=t && e[0]!==CONTEST);
   document.getElementById("nextEvent").textContent = next ? (diffDays(t,next[0])===0?"Today":diffDays(t,next[0])+"d") : "–";
-  document.getElementById("nextEventLabel").textContent = next ? "team contest · "+fmt(next[0]) : "no more team contests";
-  const di = dayIndex(t), dd = DAYS[di];
-  document.getElementById("weekLabel").textContent = (t<DAYS[0].date?"Starts "+fmt(DAYS[0].date):"Day "+(di+1)+" of "+DAYS.length+" · "+dd.title);
+  document.getElementById("nextEventLabel").textContent = next ? "checkpoint · "+fmt(next[0]) : "no more checkpoints";
+  const wi = weekIndex(t), ww = WEEKS[wi];
+  document.getElementById("weekLabel").textContent = (t<WEEKS[0].start?"Starts "+fmt(WEEKS[0].start):"Week "+(wi+1)+" of "+WEEKS.length+" · "+ww.title);
   const who = document.getElementById("who");
   who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{if(S.me!==m.id && D.mode!=="list") D.mode="setup"; S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
   const tabs = document.getElementById("tabs");
@@ -363,8 +387,8 @@ async function toggleTask(mid,id){
 }
 try { for(const m of MEMBERS){ const x=localStorage.getItem("camp.done."+m.id); if(x) S.done[m.id]=JSON.parse(x); } } catch(e){}
 function scheduleProgress(mid){
-  const upto = dayIndex(today()); let done=0,total=0;
-  DAYS.slice(0,upto+1).forEach(d=>tasksFor(d,mid).forEach(t=>{ total++; if(isDone(mid,t[0])) done++; }));
+  const upto = weekIndex(today()); let done=0,total=0;
+  WEEKS.slice(0,upto+1).forEach(w=>tasksFor(w,mid).forEach(t=>{ total++; if(isDone(mid,t[0])) done++; }));
   return {done,total};
 }
 function taskRow(mid, t, editable){
@@ -527,20 +551,21 @@ function drillList(){
 
 /* ---------- views ---------- */
 function viewToday(){
-  const m = member(S.me), t = today(), di = dayIndex(t), day = DAYS[di];
-  const tasks = tasksFor(day, m.id), done = tasks.filter(x=>isDone(m.id,x[0])).length;
+  const m = member(S.me), t = today(), wi = weekIndex(t), w = WEEKS[wi];
+  const tasks = tasksFor(w, m.id), done = tasks.filter(x=>isDone(m.id,x[0])).length;
+  const nw = WEEKS[wi+1];
   const left = h("section",{class:"panel"},
-    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,(t<day.date?"Coming up: ":"")+day.title), h("span",{class:"label"},"Day "+(di+1)+" of "+DAYS.length+" · "+fmt(day.date))),
-    h("p",{class:"muted",style:{margin:0}},m.name+": "+done+" of "+tasks.length+" done today. Lane: "+m.lane+"."),
+    h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h2",null,(t<w.start?"Coming up: ":"This week: ")+w.title), h("span",{class:"label"},"Week "+(wi+1)+" of "+WEEKS.length+" · from "+fmt(w.start))),
+    h("p",{class:"muted",style:{margin:0}},w.phase+". "+m.name+": "+done+" of "+tasks.length+" done. About 4 hours: spread it over 3 sessions."),
     h("div",{class:"tasks"},...tasks.map(x=>taskRow(m.id,x,true))),
-    di+1<DAYS.length ? h("div",{class:"stack",style:{gap:"4px"}}, h("span",{class:"label"},"Tomorrow · "+DAYS[di+1].title),
-      h("div",{class:"muted",style:{fontSize:"13px"}},tasksFor(DAYS[di+1],m.id).map(x=>x[1].replace(/: find the page.*$/,"")).join(" · "))) : null,
-    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"How to solve with the notebook"),
+    nw ? h("div",{class:"stack",style:{gap:"4px"}}, h("span",{class:"label"},"Next week · "+nw.title),
+      h("div",{class:"muted",style:{fontSize:"13px"}},nw.tasks.filter(x=>x[2]).map(x=>x[1]).join(" · ")||nw.tasks[0][1])) : null,
+    h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Every problem"),
       h("ol",{class:"routine"},
-        h("li",null,"Read the constraints first: they tell you the complexity (notebook/index.md, top table)."),
-        h("li",null,"Name the technique. Not sure? Brute force → what repeats? → what removes it?"),
-        h("li",null,"Open that notebook page, copy the template, adapt the input and output."),
-        h("li",null,"Samples + 2 tiny inputs you made up, then submit. 3 wrong = stop, re-read."))));
+        h("li",null,"Read the constraints first: they tell you the complexity (notebook index, top table)."),
+        h("li",null,"Name the technique before opening the notebook. Not sure? Brute force → what repeats? → what removes it?"),
+        h("li",null,"Indices involved? Check against a brute force on small random input before submitting."),
+        h("li",null,"Stuck 30 min: read the editorial, then re-solve it yourself 2 days later."))));
   return h("div",{class:"stack",style:{gap:"22px"}}, h("div",{class:"grid2"}, left, checkinForm(m)), toolsPanel());
 }
 
@@ -574,11 +599,11 @@ function toolsPanel(){
         cmd("python3 recognizer/quiz.py add"),
         h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"study shows new cards with links, quiz tests what you've studied, add saves a problem you missed. Tags: graph, dp, greedy, math, geometry, strings, \"data structure\" (with quotes). Your quiz progress stays on your own computer."))),
     h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Notebook pages in the repo"),
-      h("div",{class:"chips"}, ...[["notebook/index.md","Constraint and keyword index"],["notebook/python_stdlib.md","Python standard library sheet"],["notebook/graphs.py","Graph templates"],["notebook/PLAN.md","25-page notebook plan"]].map(([f,n])=>
+      h("div",{class:"chips"}, ...[["notebook/notebook.pdf","Printable notebook (PDF)"],["notebook/index.md","Index"],["notebook/techniques.py","Greedy + techniques"],["notebook/data_structures.py","Data structures"],["notebook/math_nt.py","Math"],["notebook/geometry.py","Geometry"],["notebook/graphs.py","Graphs"],["notebook/dp.py","DP"],["notebook/strings.py","Strings"],["notebook/template.cpp","C++ template"]].map(([f,n])=>
         h("a",{class:"plink",href:"https://github.com/1onmyraft/icpc_practice/blob/claude/icpc-regionals-prep-4y8j1o/"+f,target:"_blank",rel:"noopener"},n)))));
 }
 
-const TOPIC_NAMES = {drill:"Drill", notebook:"Notebook pages", cses:"CSES / Kattis problems", contest:"Team contest / upsolve", other:"Other"};
+const TOPIC_NAMES = {learn:"Learned a technique", cses:"CSES problems", contest:"Contest", upsolve:"Upsolve / re-solve", mock:"Mock regional", other:"Other"};
 function checkinForm(m){
   const t = today();
   const existing = S.checkins.find(c=>c.member===m.id && c.date===t);
@@ -659,7 +684,7 @@ function viewTeam(){
         h("div",null,h("div",{class:"v num"},String(wt.minutes)),h("div",{class:"label"},"min, last 7 days")),
         h("div",null,h("div",{class:"v num"},String(wt.problems)),h("div",{class:"label"},"AC, last 7 days"))),
       h("div",{class:"stack",style:{gap:"4px"}},
-        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Schedule tasks done (so far)"),h("span",{class:"num",style:{fontSize:"13px"}},sp.done+" / "+sp.total)),
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Plan tasks done (so far)"),h("span",{class:"num",style:{fontSize:"13px"}},sp.done+" / "+sp.total)),
         h("div",{class:"bar"},h("span",{style:{width:(sp.total?100*sp.done/sp.total:0)+"%"}}))),
       (()=>{ const ds=drillSummary(m.id); return h("div",{class:"stack",style:{gap:"4px"}},
         h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill: lane + core mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.laneMastered+" / "+ds.laneTotal+" · "+ds.mastered+"/"+DRILL.length+" overall")),
@@ -667,22 +692,27 @@ function viewTeam(){
       latestStuck? h("div",{class:"stuck"},h("div",{class:"label"},"Stuck on · "+fmt(latestStuck.date)),latestStuck.stuck) : null);
   });
   const t0 = today();
-  const ev = h("section",{class:"panel"}, h("h2",null,"Team contests"),
+  const ev = h("section",{class:"panel"}, h("h2",null,"Checkpoints"),
     h("div",{class:"events"}, ...EVENTS.map(([d,txt])=>[h("span",{class:"num"+(d<t0?" muted":""),style:{fontSize:"13px"}},fmt(d)),h("span",{class:d<t0?"muted":""},txt)])));
   return h("div",{class:"stack",style:{gap:"20px"}}, h("div",{class:"cards"},...cards), ev);
 }
 
 function viewPlan(){
-  const t = today();
-  return h("div",{class:"stack",style:{gap:"16px"}},
-    h("p",{class:"muted",style:{margin:0}},"Nine days to the contest. Everyone does the shared tasks; each person also has their own lane tasks. You can tick only your own."),
-    ...DAYS.map((d,i)=>h("section",{class:"panel"+(d.date===t?" todaycard":""),style:d.date<t?{opacity:.75}:null},
-      h("div",{class:"row",style:{justifyContent:"space-between"}}, h("h3",null,"Day "+(i+1)+" · "+d.title), h("span",{class:"label"},fmt(d.date)+(d.date===t?" · today":""))),
-      h("div",{class:"planDay"},
-        h("div",{class:"stack",style:{gap:"6px"}}, h("span",{class:"label"},"Everyone"), ...d.all.map(x=>h("div",{style:{fontSize:"14px"}},"• "+x[1]))),
-        ...MEMBERS.filter(m=>d[m.id]).map(m=>h("div",{class:"stack",style:{gap:"6px"}},
-          h("span",{class:"label",style:{display:"flex",gap:"6px",alignItems:"center"}},dot(m.color),m.name),
-          ...d[m.id].map(x=>taskRow(m.id,[d.date+":"+x[0],x[1],x[2]],m.id===S.me))))))));
+  const t = today(), cur = weekIndex(t);
+  const me = member(S.me);
+  const parts = [h("p",{class:"muted",style:{margin:0}},"52 weeks to the Nov 2027 regional, about 4 hours a week: learn one technique, solve its problems, one contest, one re-solve. Every 4th week is a mock regional. Ticks are saved for "+me.name+".")];
+  let phase = null;
+  WEEKS.forEach((w,i)=>{
+    if(w.phase!==phase){ phase=w.phase; parts.push(h("h2",{style:{margin:"10px 0 0"}},phase)); }
+    const isCur = i===cur && t>=w.start;
+    const tasks = tasksFor(w, me.id), done = tasks.filter(x=>isDone(me.id,x[0])).length;
+    parts.push(h("details",{class:"panel"+(isCur?" todaycard":""),open:isCur||null,style:i<cur?{opacity:.75}:null},
+      h("summary",{style:{cursor:"pointer",display:"flex",justifyContent:"space-between",gap:"8px"}},
+        h("strong",null,"Week "+(i+1)+" · "+w.title),
+        h("span",{class:"label"},fmt(w.start)+(isCur?" · this week":"")+" · "+done+"/"+tasks.length)),
+      h("div",{class:"tasks",style:{marginTop:"8px"}},...tasks.map(x=>taskRow(me.id,x,true)))));
+  });
+  return h("div",{class:"stack",style:{gap:"10px"}},...parts);
 }
 
 function viewCoverage(){
