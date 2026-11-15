@@ -7,6 +7,7 @@ WHICH ONE?
   range MIN/MAX, array never changes  -> sparse table         O(1) query
   range MIN/MAX/SUM, with updates     -> segment tree         O(log n) both
   min/max of every window of size k   -> monotonic deque      O(n) total
+  count a[i] >= x in a[l..r], many q  -> offline + Fenwick    O((n+q) log n)
   sum of a rectangle in a grid        -> 2D prefix sums       O(1) query
 
 Neutral fill values: sum -> 0, min -> inf, max -> -inf.
@@ -88,6 +89,28 @@ class Fenwick:
 
     def range_sum(self, l, r):      # a[l..r], 1-indexed inclusive
         return self.prefix(r) - self.prefix(l - 1)
+
+
+# ---------- Offline "count values >= x in a[l..r]" (Fenwick) ----------
+# Pattern: many queries "how many a[i] >= x with l <= i <= r?"  Looping is O(n*q) -> TLE.
+# Sort queries by x DESC, insert values into a Fenwick tree from largest to smallest;
+# when a query is answered the tree holds exactly the values >= x.  O((n + q) log n).
+# (For "<= x": sort both ascending.  Used in PNW 2026 K, Platform Nine.)
+def count_ge_offline(a, queries):
+    """a: list (0-indexed). queries: list of (l, r, x), 0-indexed inclusive. Returns answers."""
+    n = len(a)
+    vals = sorted(((v, i) for i, v in enumerate(a)), reverse=True)
+    order = sorted(range(len(queries)), key=lambda qi: -queries[qi][2])
+    fw = Fenwick(n)
+    ans = [0] * len(queries)
+    k = 0
+    for qi in order:
+        l, r, x = queries[qi]
+        while k < n and vals[k][0] >= x:
+            fw.add(vals[k][1] + 1, 1)
+            k += 1
+        ans[qi] = fw.range_sum(l + 1, r + 1)
+    return ans
 
 
 # ---------- Sparse table: static range min, O(1) query ----------
@@ -211,6 +234,8 @@ if __name__ == "__main__":
             for x in b[l:r + 1]:
                 g = gcd(g, abs(x))
             assert stg.query(l, r + 1) == g
+        qs = [(l, random.randint(l, n - 1), random.randint(-20, 20)) for l in [random.randrange(n) for _ in range(10)]]
+        assert count_ge_offline(a, qs) == [sum(1 for v in a[l:r + 1] if v >= x) for l, r, x in qs]
         k = random.randint(1, n)
         assert window_mins(a, k) == [min(a[i:i + k]) for i in range(n - k + 1)]
         ns = next_smaller(a)
