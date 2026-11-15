@@ -54,6 +54,24 @@ class Fenwick:
         return self.prefix(r) - self.prefix(l - 1)
 
 
+# ---------- copied from notebook: Data structures -> count_ge_offline ----------
+def count_ge_offline(a, queries):
+    """a: list (0-indexed). queries: list of (l, r, x), 0-indexed inclusive. Returns answers."""
+    n = len(a)
+    vals = sorted(((v, i) for i, v in enumerate(a)), reverse=True)
+    order = sorted(range(len(queries)), key=lambda qi: -queries[qi][2])
+    fw = Fenwick(n)
+    ans = [0] * len(queries)
+    k = 0
+    for qi in order:
+        l, r, x = queries[qi]
+        while k < n and vals[k][0] >= x:
+            fw.add(vals[k][1] + 1, 1)
+            k += 1
+        ans[qi] = fw.range_sum(l + 1, r + 1)
+    return ans
+
+
 def solve():
     n = int(input())
     people = input().strip()
@@ -65,7 +83,7 @@ def solve():
     # wizard_gap[i]: person i is a wizard -> time since the previous wizard.
     #   With barrier duration d, this wizard searches iff wizard_gap[i] >= d.
     muggle_gap = [INF] * n
-    wizard_gap = [None] * n
+    wizard_gap = [-1] * n           # -1 = not a wizard / first wizard: never >= d
     last_wizard = -1
     for i in range(n):
         if people[i] == 'W':
@@ -85,7 +103,8 @@ def solve():
     q = int(input())
     answer_count = [0] * q
     answer_d = [0] * q
-    to_count = []          # (d, lo, hi, query index): count wizard gaps >= d in [lo, hi]
+    count_queries = []     # (lo, hi, d): how many wizard gaps >= d in [lo, hi]
+    count_owner = []       # which original query each one belongs to
 
     for qi in range(q):
         l, r = map(int, input().split())
@@ -101,21 +120,13 @@ def solve():
         else:
             answer_count[qi] = 1            # the first wizard always searches
             if first + 1 <= r:
-                to_count.append((d, first + 1, r, qi))
+                count_queries.append((first + 1, r, d))
+                count_owner.append(qi)
 
-    # Offline counting: handle queries from largest d to smallest, and add wizard gaps
-    # to a Fenwick tree from largest to smallest.  When a query is answered, the tree
-    # holds exactly the gaps >= its d, so a range sum counts the searching wizards.
-    gaps = sorted(((wizard_gap[i], i) for i in range(n) if wizard_gap[i] is not None),
-                  reverse=True)
-    to_count.sort(reverse=True)
-    fw = Fenwick(n)
-    g = 0
-    for d, lo, hi, qi in to_count:
-        while g < len(gaps) and gaps[g][0] >= d:
-            fw.add(gaps[g][1] + 1, 1)        # Fenwick is 1-indexed
-            g += 1
-        answer_count[qi] += fw.range_sum(lo + 1, hi + 1)
+    # wizards after the first one search iff their gap >= d  -> offline count (notebook)
+    counts = count_ge_offline(wizard_gap, count_queries)
+    for qi, c in zip(count_owner, counts):
+        answer_count[qi] += c
 
     return [f"{answer_count[qi]} {answer_d[qi]}" for qi in range(q)]
 
