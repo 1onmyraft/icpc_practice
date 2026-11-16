@@ -180,12 +180,8 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px
 /* ---------- static plan data (from the team's assessment sheets) ---------- */
 const CONTEST = "2027-11-13";   /* estimate: confirm when PacNW announces */
 const MEMBERS = [
-  {id:"hugo",  name:"Hugo",  color:"var(--hugo)",  lane:"Graphs, trees & strings",
-   why:"Strongest graph sheet: DFS/BFS, Dijkstra and DSU already solid; head start on tries."},
-  {id:"tyler", name:"Tyler", color:"var(--tyler)", lane:"Math, data structures & geometry",
-   why:"Only one with modular arithmetic, combinatorics and basic geometry above zero."},
-  {id:"edwin", name:"Edwin", color:"var(--edwin)", lane:"DP & complete search",
-   why:"Only one with 1D/2D DP and bitmasks/backtracking at a working level."}
+  {id:"tyler", name:"Tyler", color:"var(--tyler)", lane:"Solo: every topic",
+   why:"Training solo toward the Nov 2027 regional."}
 ];
 const CP="https://cp-algorithms.com/", UG="https://usaco.guide/";
 const T = {
@@ -337,11 +333,11 @@ const dot = c => h("span",{class:"dot",style:{background:c}});
 
 /* ---------- state ---------- */
 const S = { me:null, tab:"today", checkins:[], progress:{}, db:null, canWrite:true, dbReady:false, dbError:"" };
-try { const m = localStorage.getItem("camp.me"); if(member(m)) S.me = m; } catch(e){}
+S.me = "tyler";
 try { const t = localStorage.getItem("camp.tab"); if(t) S.tab = t; } catch(e){}
 if(!S.me) S.me = "tyler";
 
-const TABS = [["today","Today"],["drill","Drill"],["team","Team"],["plan","Plan"],["coverage","Coverage"],["log","Log"]];
+const TABS = [["today","Today"],["plan","Plan"],["drill","Drill"],["team","Progress"],["log","Log"]];
 
 function renderChrome(){
   const t = today();
@@ -352,13 +348,13 @@ function renderChrome(){
   const wi = weekIndex(t), ww = WEEKS[wi];
   document.getElementById("weekLabel").textContent = (t<WEEKS[0].start?"Starts "+fmt(WEEKS[0].start):"Week "+(wi+1)+" of "+WEEKS.length+" · "+ww.title);
   const who = document.getElementById("who");
-  who.replaceChildren(h("span",{class:"label"},"I am"), ...MEMBERS.map(m=>h("button",{class:"ball","aria-pressed":String(S.me===m.id),onclick:()=>{if(S.me!==m.id && D.mode!=="list") D.mode="setup"; S.me=m.id;try{localStorage.setItem("camp.me",m.id)}catch(e){} render();}},dot(m.color),m.name)));
+  who.replaceChildren(h("span",{class:"label"},"Solo training · Tyler"));
   const tabs = document.getElementById("tabs");
   tabs.replaceChildren(...TABS.map(([id,label])=>h("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id;try{localStorage.setItem("camp.tab",id)}catch(e){} render();}},label)));
   const b = document.getElementById("banner");
   b.replaceChildren();
   if(!S.db && S.dbReady) b.append(h("div",{class:"banner"},"Check-ins and progress are not available in this view. You can still read the plan. Open the page on claude.ai while signed in to check in."));
-  else if(S.db && !S.canWrite) b.append(h("div",{class:"banner"},"You can read everything here but cannot save check-ins. Ask Tyler to share this page with you as an Editor."));
+  else if(S.db && !S.canWrite) b.append(h("div",{class:"banner"},"You can read everything here but cannot save check-ins."));
   if(S.dbError) b.append(h("div",{class:"banner"},S.dbError));
 }
 
@@ -411,11 +407,10 @@ function cardOwner(tag, ans){
   return "tyler";                       // greedy, data structures, math, geometry
 }
 const DRILL = DRILL_RAW.map(c=>({id:hid(c[1]),tag:c[0],clue:c[1],answer:c[2],why:c[3],where:c[4],owner:cardOwner(c[0],c[2])}));
-const isMine = (c,id) => c.owner==="core" || c.owner===id;
-function ownerLabel(c){ if(c.owner==="core") return "Common core: everyone implements it";
-  const m=member(c.owner); return (c.owner===S.me?"Your lane":m.name+"’s lane")+" ("+m.lane.toLowerCase()+")"+(c.owner===S.me?"":": recognize it, hand it to "+m.name+" or use their notebook page"); }
+const isMine = () => true;            // solo: every card is yours
+const ownerLabel = c => c.tag;
 const DTAGS = [...new Set(DRILL.map(c=>c.tag))];
-const D = { mode:"setup", tag:"mine", len:20, queue:[], card:null, opts:[], chosen:null, right:0, asked:0, missed:[], search:"" };
+const D = { mode:"setup", tag:"all", len:20, queue:[], card:null, opts:[], chosen:null, right:0, asked:0, missed:[], search:"" };
 S.drillStats = {};             // member -> {cardId: {s: seen, m: misses}}
 const SAVE = { timer:null, inflight:false, dirty:false, pending:false };
 function myStats(){ return (S.drillStats[S.me] = S.drillStats[S.me] || {}); }
@@ -487,15 +482,14 @@ function viewDrill(){
   const m = member(S.me), sum = drillSummary(S.me);
   const head = h("div",{class:"row",style:{justifyContent:"space-between"}},
     h("h2",null,"Recognition drill"),
-    h("span",{class:"muted num",style:{fontSize:"13px"}},m.name+": "+sum.laneMastered+" of "+sum.laneTotal+" lane + core · "+sum.mastered+" of "+DRILL.length+" overall"+(sum.weak?" · "+sum.weak+" to review":"")));
+    h("span",{class:"muted num",style:{fontSize:"13px"}},sum.mastered+" of "+DRILL.length+" mastered"+(sum.weak?" · "+sum.weak+" to review":"")));
   if(D.mode==="card") return h("section",{class:"panel dcard"}, head, drillCard());
   if(D.mode==="done") return h("section",{class:"panel dcard"}, head, drillDone());
   if(D.mode==="list") return h("section",{class:"panel dcard"}, head, drillList());
-  const tagBtns = ["mine","all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="mine"?"For "+m.name:t==="all"?"All topics":t));
+  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All topics":t));
   const lenBtns = [10,20,40].map(n=>h("button",{type:"button","aria-pressed":String(D.len===n),onclick:()=>{D.len=n;render();}},n+" cards"));
   return h("section",{class:"panel dsetup"}, head,
     h("p",{class:"muted",style:{margin:0}},"Read a clue, pick the technique. A wrong answer shows why and which notebook section has the code, and the card comes back a few cards later. Your weakest cards come first."),
-    h("p",{style:{margin:0}},h("strong",null,"For "+m.name+": "),"about 70% "+m.lane.toLowerCase()+" plus the common core (the ones you implement), 30% other lanes (recognize and hand off)."),
     h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Topic"),h("div",{class:"seg"},...tagBtns)),
     h("div",{class:"stack",style:{gap:"6px"}},h("span",{class:"label"},"Length"),h("div",{class:"seg"},...lenBtns)),
     h("div",{class:"row"}, h("button",{class:"btn",type:"button",onclick:()=>startDrill(false)},"Start drill"),
@@ -541,7 +535,7 @@ function drillList(){
       h("span",{class:"muted",style:{fontSize:"13px"}},c.why+" Notebook: "+c.where+" · "+ownerLabel(c)))) : [h("p",{class:"muted"},"No cards match.")]));
   };
   fill();
-  const tagBtns = ["mine","all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="mine"?"Mine (lane + core)":t==="all"?"All":t));
+  const tagBtns = ["all",...DTAGS].map(t=>h("button",{type:"button","aria-pressed":String(D.tag===t),onclick:()=>{D.tag=t;render();}},t==="all"?"All":t));
   return h("div",{class:"dcard"},
     h("div",{class:"seg"},...tagBtns),
     h("input",{type:"search",id:"drill-search",placeholder:"Search clues and techniques",value:D.search,oninput:e=>{D.search=e.target.value;fill();}}),
@@ -566,7 +560,18 @@ function viewToday(){
         h("li",null,"Name the technique before opening the notebook. Not sure? Brute force → what repeats? → what removes it?"),
         h("li",null,"Indices involved? Check against a brute force on small random input before submitting."),
         h("li",null,"Stuck 30 min: read the editorial, then re-solve it yourself 2 days later."))));
-  return h("div",{class:"stack",style:{gap:"22px"}}, h("div",{class:"grid2"}, left, checkinForm(m)), toolsPanel());
+  // work ahead: the first later week with anything left to do
+  let ahead = null;
+  for(let k=wi+1;k<WEEKS.length && !ahead;k++){ const ts=tasksFor(WEEKS[k],m.id); if(ts.some(x=>!isDone(m.id,x[0]))) ahead={k,ts}; }
+  const weekDone = done===tasks.length;
+  const more = ahead ? h("section",{class:"panel"+(weekDone?" todaycard":"")},
+    h("div",{class:"row",style:{justifyContent:"space-between"}},
+      h("h2",null,(weekDone?"Week done. Keep going: ":"Work ahead: ")+WEEKS[ahead.k].title),
+      h("span",{class:"label"},"Week "+(ahead.k+1)+" · "+fmt(WEEKS[ahead.k].start))),
+    h("p",{class:"muted",style:{margin:0}},weekDone?"You finished this week early. Next week's problems are open now; ticks count toward that week.":"Optional. Finish this week first, then pull problems from here."),
+    h("div",{class:"tasks"},...ahead.ts.filter(x=>x[2]||weekDone).map(x=>taskRow(m.id,x,true))),
+    h("p",{class:"muted",style:{margin:0,fontSize:"13px"}},"Want even more? The CSES problem set lists every problem by section: ",h("a",{href:"https://cses.fi/problemset/",target:"_blank",rel:"noopener"},"cses.fi/problemset"),".")) : null;
+  return h("div",{class:"stack",style:{gap:"22px"}}, h("div",{class:"grid2"}, left, checkinForm(m)), more, toolsPanel());
 }
 
 const REPO = "https://github.com/1onmyraft/icpc_practice/tree/claude/icpc-regionals-prep-4y8j1o";
@@ -635,7 +640,7 @@ function checkinForm(m){
     h("label",{class:"f"},"Which problems", h("input",{type:"text",id:"ci-probs",name:"problems",maxlength:"400",value:existing?existing.problems:"",placeholder:"CSES 1192, Kattis bigand"})),
     h("fieldset",{style:{border:0,padding:0,margin:0}}, h("legend",{class:"label",style:{marginBottom:"6px"}},"What you worked on"),
       h("div",{class:"chips"}, ...topicOpts.map(([id,n])=>h("label",null,h("input",{type:"checkbox",name:"topics",value:id,checked:chosen.has(id)}),n)))),
-    h("label",{class:"f"},"Stuck on anything? (your team sees this)", h("textarea",{id:"ci-stuck",name:"stuck",maxlength:"600",placeholder:"Why does my Dijkstra TLE on Flight Discount?"},existing?existing.stuck:"")),
+    h("label",{class:"f"},"Stuck on anything? (paste it to Claude too)", h("textarea",{id:"ci-stuck",name:"stuck",maxlength:"600",placeholder:"Why does my Dijkstra TLE on Flight Discount?"},existing?existing.stuck:"")),
     h("fieldset",{style:{border:0,padding:0,margin:0}}, h("legend",{class:"label",style:{marginBottom:"6px"}},"How confident do you feel today? (1 low, 5 high)"),
       h("div",{class:"scale"}, ...[1,2,3,4,5].map(v=>h("label",null,h("input",{type:"radio",name:"confidence",value:String(v),checked:existing&&existing.confidence===v}),h("span",null,String(v)))))),
     h("button",{class:"btn",type:"submit",disabled},existing?"Update today’s check-in":"Save check-in"),
@@ -687,7 +692,7 @@ function viewTeam(){
         h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Plan tasks done (so far)"),h("span",{class:"num",style:{fontSize:"13px"}},sp.done+" / "+sp.total)),
         h("div",{class:"bar"},h("span",{style:{width:(sp.total?100*sp.done/sp.total:0)+"%"}}))),
       (()=>{ const ds=drillSummary(m.id); return h("div",{class:"stack",style:{gap:"4px"}},
-        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill: lane + core mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.laneMastered+" / "+ds.laneTotal+" · "+ds.mastered+"/"+DRILL.length+" overall")),
+        h("div",{class:"row",style:{justifyContent:"space-between"}},h("span",{class:"label"},"Drill mastered"),h("span",{class:"num",style:{fontSize:"13px"}},ds.mastered+" / "+DRILL.length)),
         h("div",{class:"bar"},h("span",{style:{width:(100*ds.laneMastered/ds.laneTotal)+"%"}}))); })(),
       latestStuck? h("div",{class:"stuck"},h("div",{class:"label"},"Stuck on · "+fmt(latestStuck.date)),latestStuck.stuck) : null);
   });
@@ -700,7 +705,7 @@ function viewTeam(){
 function viewPlan(){
   const t = today(), cur = weekIndex(t);
   const me = member(S.me);
-  const parts = [h("p",{class:"muted",style:{margin:0}},"52 weeks to the Nov 2027 regional, about 4 hours a week: learn one technique, solve its problems, one contest, one re-solve. Every 4th week is a mock regional. Ticks are saved for "+me.name+".")];
+  const parts = [h("p",{class:"muted",style:{margin:0}},"52 weeks to the Nov 2027 regional, about 4 hours a week: learn one technique, solve its problems, one contest, one re-solve. Every 4th week is a mock regional. Working ahead is fine: tick any week.")];
   let phase = null;
   WEEKS.forEach((w,i)=>{
     if(w.phase!==phase){ phase=w.phase; parts.push(h("h2",{style:{margin:"10px 0 0"}},phase)); }

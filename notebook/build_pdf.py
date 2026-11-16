@@ -10,6 +10,7 @@ import subprocess
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGES = [
     ("Index: constraints, keywords, traps", "index.md"),
+    ("My bug checklist + status", "my_status.md"),
     ("Template", "template.py"),
     ("Python standard library", "python_stdlib.md"),
     ("Greedy + techniques", "techniques.py"),
