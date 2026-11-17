@@ -17,6 +17,8 @@ Every line here is a bug I actually made.
 | Remove debug `print`s before submitting | Point Location: `print(slope)` |
 | `sys.stdin.readline` gives `str`; `.buffer` gives bytes (only for all-number input) | |
 | Greedy rule: try to break it with 3 tiny cases first | Movie Festival: almost sorted by length |
+| Loop over **all** events/items: `range(len(x) - 1)` silently drops the last one | Restaurant Customers: only correct because the last event is a leave |
+| 1000x1000 grid in Python: flat array, no allocation in the loop, PyPy | Labyrinth: correct but TLE |
 | Range queries + anything that "looks back" (previous wizard, previous occurrence): the first element inside `[l, r]` needs special handling | PacNW K: first wizard in range |
 | Counting inside each query range is O(n q). Many queries with a threshold: offline + Fenwick | PacNW K: too slow |
 | `for i in t` where `t` is an int: use `range(t)`. `map(int, input())` needs `.split()` | `test.py` |
@@ -27,7 +29,8 @@ Every line here is a bug I actually made.
 | Technique | Problems | Notebook page |
 |---|---|---|
 | Sort + greedy | CSES 1629 Movie Festival | techniques |
-| Two pointers (same end and opposite ends) | CSES 1084 Apartments, 1090 Ferris Wheel (`n - pairs` trick) | techniques |
+| Two pointers (same end and opposite ends) | CSES 1084 Apartments, 1090 Ferris Wheel (`n - pairs` trick), 1640 Sum of Two Values (sort `(value, index)` pairs) | techniques |
+| Sweep line: +1 at start, -1 at end, sort events | CSES 1619 Restaurant Customers (7 min) | techniques: max_overlap |
 | Cross product orientation | CSES 2189 Point Location Test | geometry |
 | Fenwick tree (point set, range sum) | CSES 1648 | data structures |
 | Sparse table (wrote my own, then fixed the bound) | CSES 1647 | data structures |
@@ -42,7 +45,7 @@ Do one more problem of each type from a blank file before calling it proven.
 |---|---|---|
 | Range min + offline counting with Fenwick | PacNW K (idea right, too slow, too late) | rewrite K from a blank file |
 | Sort + suffix max + bisect ("does some j beat i?") | PacNW I (upsolved with help) | CSES 1645 Nearest Smaller Values |
-| BFS shortest path + path reconstruction | `labyrinth.py` (unfinished) | finish CSES 1193 Labyrinth |
+| BFS shortest path + path reconstruction | `labyrinth.py` (correct, TLE in Python) | resubmit 1193 with PyPy / flat array |
 | Custom comparators (`cmp_to_key`) | notes | "largest number" ordering |
 | Prefix sums, rhombus / row sums | Roblox OA | CSES 1646, 1652 |
 
