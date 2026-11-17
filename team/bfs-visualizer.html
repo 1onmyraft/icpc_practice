@@ -1,0 +1,283 @@
+<title>BFS Step-Through</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: graph canvas left, the machine's state (code, queue, dist, adj) right; one column on phones */
+:root{
+  --bg:#f3f5f9; --panel:#ffffff; --ink:#17202c; --muted:#5a6678; --line:#d9dfe8;
+  --accent:#2f62e0;      /* current node / current line */
+  --queue:#c98a12;       /* waiting in the queue (frontier) */
+  --done:#23825f;        /* finished */
+  --idle:#e7ebf2; --idle-ink:#7a8596;
+  --skip:#b8404a;
+  --code-bg:#f7f8fb;
+  --f-display:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --f-body:"Inter", ui-sans-serif, system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f141c; --panel:#161d28; --ink:#e7ecf4; --muted:#97a3b6; --line:#2a3445;
+  --accent:#6f97ff; --queue:#e6ad3c; --done:#43b98b; --idle:#232c3a; --idle-ink:#8592a6;
+  --skip:#ec6f78; --code-bg:#121923; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --panel:#161d28; --ink:#e7ecf4; --muted:#97a3b6; --line:#2a3445;
+  --accent:#6f97ff; --queue:#e6ad3c; --done:#43b98b; --idle:#232c3a; --idle-ink:#8592a6;
+  --skip:#ec6f78; --code-bg:#121923; color-scheme:dark }
+
+body{ background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5 }
+.wrap{ max-width:1180px; margin:0 auto; padding-block:28px 40px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex; flex-direction:column; gap:18px }
+header{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px }
+h1{ font-family:var(--f-display); font-size:clamp(26px,4vw,36px); line-height:1.1; margin:0; text-wrap:balance }
+.sub{ color:var(--muted); margin:4px 0 0; max-width:62ch }
+.label{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600 }
+
+.grid{ display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:18px; align-items:start }
+@media (max-width:860px){ .grid{ grid-template-columns:minmax(0,1fr) } }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; min-width:0;
+  display:flex; flex-direction:column; gap:12px }
+.side{ display:flex; flex-direction:column; gap:18px; min-width:0 }
+
+/* graph */
+svg{ width:100%; height:auto; display:block; touch-action:manipulation }
+.edge{ stroke:var(--line); stroke-width:3; transition:stroke .25s, stroke-width .25s }
+.edge.tree{ stroke:var(--done); stroke-width:4 }
+.edge.active{ stroke:var(--accent); stroke-width:5 }
+.edge.skipped{ stroke:var(--skip); stroke-width:5; stroke-dasharray:7 6 }
+.node circle{ fill:var(--idle); stroke:var(--line); stroke-width:2; transition:fill .25s, stroke .25s }
+.node text.id{ font-family:var(--f-display); font-weight:700; font-size:20px; fill:var(--idle-ink); text-anchor:middle; dominant-baseline:central }
+.node text.d{ font-family:var(--f-mono); font-size:12px; fill:var(--muted); text-anchor:middle }
+.node.queued circle{ fill:var(--queue) } .node.queued text.id{ fill:#fff }
+.node.done circle{ fill:var(--done) }   .node.done text.id{ fill:#fff }
+.node.current circle{ fill:var(--accent); stroke:var(--ink); stroke-width:3 } .node.current text.id{ fill:#fff }
+.node.checking circle{ stroke:var(--accent); stroke-width:4 }
+.node{ cursor:pointer } .node:focus-visible circle{ stroke:var(--ink); stroke-width:4 } .node:focus{ outline:none }
+
+.legend{ display:flex; flex-wrap:wrap; gap:14px; font-size:13px; color:var(--muted) }
+.legend span{ display:inline-flex; align-items:center; gap:6px }
+.sw{ width:14px; height:14px; border-radius:50%; display:inline-block }
+
+.say{ font-size:16px; min-height:3em; margin:0 }
+.say b{ font-family:var(--f-mono); font-weight:600 }
+
+/* controls */
+.controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+button{ font:600 14px var(--f-body); border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink);
+  padding:8px 14px; cursor:pointer }
+button.primary{ background:var(--accent); border-color:var(--accent); color:#fff }
+button:disabled{ opacity:.45; cursor:default }
+button:focus-visible{ outline:3px solid var(--accent); outline-offset:2px }
+.count{ font-family:var(--f-mono); font-size:13px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums }
+
+/* code */
+pre.code{ margin:0; background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:10px 0;
+  font:13px/1.65 var(--f-mono); overflow-x:auto }
+pre.code span{ display:block; padding:0 12px; white-space:pre; border-left:3px solid transparent }
+pre.code span.on{ background:color-mix(in srgb, var(--accent) 16%, transparent); border-left-color:var(--accent) }
+pre.code i{ font-style:normal; color:var(--muted) }
+
+/* queue + arrays */
+.queue{ display:flex; gap:6px; flex-wrap:wrap; min-height:40px; align-items:center }
+.qcell{ font:600 15px var(--f-mono); width:38px; height:38px; display:grid; place-items:center; border-radius:8px;
+  background:var(--queue); color:#fff; animation:pop .25s ease-out }
+.qcell.front{ outline:3px solid var(--ink); outline-offset:-3px }
+.empty{ color:var(--muted); font-size:13px }
+@keyframes pop{ from{ transform:scale(.6); opacity:.3 } }
+.arr{ display:grid; grid-template-columns:auto repeat(8, minmax(30px,1fr)); border:1px solid var(--line); border-radius:8px; overflow:hidden;
+  font:13px var(--f-mono); font-variant-numeric:tabular-nums }
+.arr div{ padding:6px 4px; text-align:center; border-left:1px solid var(--line) }
+.arr div.h{ color:var(--muted); background:var(--code-bg) }
+.arr div.k{ border-left:0; text-align:left; padding-left:10px; color:var(--muted); background:var(--code-bg) }
+.arr div.set{ color:var(--done); font-weight:600 }
+.arr div.flash{ background:color-mix(in srgb, var(--accent) 18%, transparent) }
+.tablewrap{ overflow-x:auto }
+.adj{ display:grid; grid-template-columns:auto 1fr; gap:2px 12px; font:13px var(--f-mono) }
+.adj .k{ color:var(--muted) }
+.adj .row.on{ color:var(--accent); font-weight:600 }
+.adj .v.on{ background:color-mix(in srgb, var(--accent) 20%, transparent); border-radius:4px; padding:0 2px }
+.note{ font-size:13px; color:var(--muted); margin:0 }
+@media (prefers-reduced-motion: reduce){ *{ transition:none!important; animation:none!important } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label">Graphs · lesson 1</div>
+      <h1>BFS, one step at a time</h1>
+      <p class="sub">8 cities, roads between them. BFS finds how many roads it takes to reach each city from the start. Press <b>Step</b> (or the → key) and watch the queue. Click any city to start from there instead.</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-label="Graph">
+      <svg id="g" viewBox="0 0 560 340" role="img" aria-label="Graph with 8 nodes"></svg>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--idle);border:1px solid var(--line)"></i>not found yet</span>
+        <span><i class="sw" style="background:var(--queue)"></i>in the queue</span>
+        <span><i class="sw" style="background:var(--accent)"></i>being processed</span>
+        <span><i class="sw" style="background:var(--done)"></i>done</span>
+      </div>
+      <p class="say" id="say" aria-live="polite"></p>
+      <div class="controls">
+        <button type="button" id="back">← Back</button>
+        <button type="button" class="primary" id="step">Step →</button>
+        <button type="button" id="play">Play</button>
+        <button type="button" id="reset">Reset</button>
+        <span class="count" id="count"></span>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="panel" aria-label="Code">
+        <div class="label">The code (notebook: graphs.py → bfs)</div>
+        <pre class="code" id="code"></pre>
+      </section>
+      <section class="panel" aria-label="Queue and distances">
+        <div class="label">Queue (front on the left)</div>
+        <div class="queue" id="queue"></div>
+        <div class="label">dist list</div>
+        <div class="tablewrap"><div class="arr" id="dist"></div></div>
+        <p class="note">−1 means "not found yet". BFS fills each city's number exactly once, and that first number is always the shortest.</p>
+      </section>
+      <section class="panel" aria-label="Adjacency list">
+        <div class="label">adj: who connects to whom</div>
+        <div class="adj" id="adj"></div>
+        <p class="note">Built from the input with <code>adj[a].append(b)</code> and <code>adj[b].append(a)</code> for every road. City 7 has no roads.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const N = 8;
+const EDGES = [[0,1],[0,2],[1,3],[2,3],[2,4],[3,5],[4,5],[4,6],[5,6]];
+const POS = [[70,110],[200,50],[190,215],[330,120],[320,290],[460,180],[500,300],[470,50]];
+const adj = Array.from({length:N}, ()=>[]);
+for(const [a,b] of EDGES){ adj[a].push(b); adj[b].push(a); }
+for(const l of adj) l.sort((x,y)=>x-y);
+
+const CODE = [
+  ["dist = [-1] * n", "every city starts as 'not found'"],
+  ["dist[src] = 0", "the start is 0 roads away"],
+  ["q = deque([src])", "the queue starts with just the start"],
+  ["while q:", ""],
+  ["    u = q.popleft()", "take the city at the front"],
+  ["    for v in adj[u]:", "look at each neighbor"],
+  ["        if dist[v] == -1:", "not found yet?"],
+  ["            dist[v] = dist[u] + 1", "one road further than u"],
+  ["            q.append(v)", "join the back of the queue"],
+];
+
+/* ---------- build the full trace once ---------- */
+function trace(src){
+  const S = [];
+  const dist = Array(N).fill(-1), parent = Array(N).fill(-1), done = Array(N).fill(false);
+  let q = [];
+  const snap = (o) => S.push(Object.assign({dist:dist.slice(), parent:parent.slice(), done:done.slice(), q:q.slice(),
+                                            cur:-1, chk:-1, edge:null, skip:false, flash:-1}, o));
+  snap({lines:[0], say:`Start: every city is <b>-1</b> ("not found yet").`});
+  dist[src] = 0; q.push(src);
+  snap({lines:[1,2], flash:src, say:`City <b>${src}</b> is the start, so <b>dist[${src}] = 0</b>. Put it in the queue.`});
+  while(q.length){
+    const u = q.shift();
+    snap({lines:[3,4], cur:u, say:`Take <b>${u}</b> off the front of the queue. It's <b>${dist[u]}</b> road${dist[u]===1?"":"s"} from the start. Now check its neighbors: <b>adj[${u}] = [${adj[u].join(", ")}]</b>.`});
+    for(const v of adj[u]){
+      if(dist[v] === -1){
+        dist[v] = dist[u] + 1; parent[v] = u; q.push(v);
+        snap({lines:[5,6,7,8], cur:u, chk:v, edge:[u,v], flash:v,
+              say:`Neighbor <b>${v}</b> is new. <b>dist[${v}] = dist[${u}] + 1 = ${dist[v]}</b>. Add it to the back of the queue.`});
+      } else {
+        snap({lines:[5,6], cur:u, chk:v, edge:[u,v], skip:true,
+              say:`Neighbor <b>${v}</b> already has a distance (<b>${dist[v]}</b>). Skip it: the first distance found is already the shortest.`});
+      }
+    }
+    done[u] = true;
+    snap({lines:[3], say: q.length ? `<b>${u}</b> is done. Back to the top: the queue still has <b>[${q.join(", ")}]</b>.` : `<b>${u}</b> is done and the queue is empty, so BFS stops.`});
+  }
+  const lost = dist.map((d,i)=>d<0?i:-1).filter(i=>i>=0);
+  snap({lines:[], say:`Finished. Each number is the fewest roads from <b>${src}</b>.` + (lost.length? ` City <b>${lost.join(", ")}</b> stays <b>-1</b>: no road reaches it.`:"") + ` The green roads are the ones BFS used to find each city; together they form a shortest-path tree.`});
+  return S;
+}
+
+/* ---------- render ---------- */
+const svg = document.getElementById("g");
+const NS = "http://www.w3.org/2000/svg";
+const el = (t, a) => { const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
+const edgeEls = {};
+for(const [a,b] of EDGES){
+  const e = el("line",{x1:POS[a][0],y1:POS[a][1],x2:POS[b][0],y2:POS[b][1],class:"edge"});
+  svg.appendChild(e); edgeEls[a+"-"+b]=e; edgeEls[b+"-"+a]=e;
+}
+const nodeEls = [];
+for(let i=0;i<N;i++){
+  const g = el("g",{class:"node",tabindex:"0",role:"button","aria-label":"Start BFS from city "+i});
+  g.appendChild(el("circle",{cx:POS[i][0],cy:POS[i][1],r:24}));
+  const t = el("text",{x:POS[i][0],y:POS[i][1],class:"id"}); t.textContent=i; g.appendChild(t);
+  const d = el("text",{x:POS[i][0],y:POS[i][1]+44,class:"d"}); g.appendChild(d);
+  const pick = () => { src=i; steps=trace(src); k=0; stop(); draw(); };
+  g.addEventListener("click", pick);
+  g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); } });
+  svg.appendChild(g); nodeEls.push({g,d});
+}
+const codeEl = document.getElementById("code");
+CODE.forEach(([c,cm])=>{ const s=document.createElement("span"); s.textContent=c; if(cm){ const i=document.createElement("i"); i.textContent="   # "+cm; s.appendChild(i);} codeEl.appendChild(s); });
+const codeLines = [...codeEl.children];
+
+let src = 0, steps = trace(src), k = 0, timer = null;
+const $ = id => document.getElementById(id);
+
+function draw(){
+  const s = steps[k];
+  for(const key in edgeEls) edgeEls[key].setAttribute("class","edge");
+  for(let v=0; v<N; v++) if(s.parent[v]>=0) edgeEls[v+"-"+s.parent[v]].setAttribute("class","edge tree");
+  if(s.edge) edgeEls[s.edge[0]+"-"+s.edge[1]].setAttribute("class","edge "+(s.skip?"skipped":"active"));
+  for(let i=0;i<N;i++){
+    let c = "node";
+    if(i===s.cur) c+=" current"; else if(s.done[i]) c+=" done"; else if(s.q.includes(i)) c+=" queued";
+    if(i===s.chk) c+=" checking";
+    nodeEls[i].g.setAttribute("class",c);
+    nodeEls[i].d.textContent = s.dist[i]<0 ? "" : "dist "+s.dist[i];
+  }
+  codeLines.forEach((ln,i)=>ln.classList.toggle("on", s.lines.includes(i)));
+  $("say").innerHTML = s.say;
+  const q = $("queue"); q.replaceChildren();
+  if(!s.q.length){ const e=document.createElement("span"); e.className="empty"; e.textContent="empty"; q.appendChild(e); }
+  s.q.forEach((v,i)=>{ const c=document.createElement("div"); c.className="qcell"+(i===0?" front":""); c.textContent=v; q.appendChild(c); });
+  const d = $("dist"); d.replaceChildren();
+  const cell = (txt,cls) => { const c=document.createElement("div"); c.className=cls; c.textContent=txt; d.appendChild(c); };
+  cell("index","k h"); for(let i=0;i<N;i++) cell(i,"h");
+  cell("dist","k"); for(let i=0;i<N;i++) cell(s.dist[i], (s.dist[i]>=0?"set":"")+(i===s.flash?" flash":""));
+  const a = $("adj"); a.replaceChildren();
+  for(let i=0;i<N;i++){
+    const kk=document.createElement("div"); kk.className="k"+(i===s.cur?" row on":""); kk.textContent="adj["+i+"]";
+    const vv=document.createElement("div"); vv.className=(i===s.cur?"row on":"");
+    vv.append("[");
+    adj[i].forEach((x,j)=>{ const sp=document.createElement("span"); sp.className="v"+(i===s.cur&&x===s.chk?" on":""); sp.textContent=x; vv.append(sp); if(j<adj[i].length-1) vv.append(", "); });
+    vv.append("]");
+    a.append(kk,vv);
+  }
+  $("count").textContent = "step "+(k+1)+" / "+steps.length+" · start "+src;
+  $("back").disabled = k===0; $("step").disabled = k===steps.length-1;
+}
+function stop(){ if(timer){ clearInterval(timer); timer=null; } $("play").textContent="Play"; }
+$("step").onclick = ()=>{ stop(); if(k<steps.length-1){ k++; draw(); } };
+$("back").onclick = ()=>{ stop(); if(k>0){ k--; draw(); } };
+$("reset").onclick = ()=>{ stop(); k=0; draw(); };
+$("play").onclick = ()=>{
+  if(timer){ stop(); return; }
+  if(k===steps.length-1) k=0;
+  $("play").textContent="Pause";
+  timer = setInterval(()=>{ if(k<steps.length-1){ k++; draw(); } else stop(); }, 1100);
+};
+document.addEventListener("keydown", e=>{
+  if(e.target.closest && e.target.closest(".node")) return;
+  if(e.key==="ArrowRight"){ e.preventDefault(); $("step").click(); }
+  if(e.key==="ArrowLeft"){ e.preventDefault(); $("back").click(); }
+});
+draw();
+})();
+</script>
